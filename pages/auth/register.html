@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - GreenPoints</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2E7D32, #4CAF50);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .register-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2E7D32;
+            margin-bottom: 24px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            flex: 1;
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2E7D32;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #27632A;
+        }
+
+        button:disabled {
+            background-color: #9E9E9E;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #2E7D32;
+        }
+
+        .login-link a {
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="register-container">
+        <h1>Registrarse</h1>
+        <form id="registerForm">
+            <!-- Nombre y Apellido -->
+            <div class="form-row">
+                <div class="form-group">
+                    <input type="text" id="name" name="name" required maxlength="50" placeholder="Nombre">
+                </div>
+                <div class="form-group">
+                    <input type="text" id="lastname" name="lastname" required maxlength="50" placeholder="Apellido">
+                </div>
+            </div>
+
+            <!-- Correo -->
+            <div class="form-group">
+                <input type="email" id="email" name="email" required maxlength="100" placeholder="Correo electrónico">
+            </div>
+
+            <!-- Tipo de usuario -->
+            <div class="form-group">
+                <label for="user_type">Tipo de usuario</label>
+                <select id="user_type" name="user_type" required>
+                    <option value="">Seleccione...</option>
+                    <option value="ciudadano">Ciudadano</option>
+                    <option value="recolector">Recolector</option>
+                </select>
+            </div>
+
+            <!-- Contraseñas -->
+            <div class="form-group">
+                <div class="password-container">
+                    <input type="password" id="password" name="password" required minlength="6"
+                        placeholder="Contraseña">
+                    <button type="button" class="password-toggle" id="togglePassword">👁️</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="password-container">
+                    <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6"
+                        placeholder="Repetir Contraseña">
+                    <button type="button" class="password-toggle" id="toggleConfirmPassword">👁️</button>
+                </div>
+            </div>
+
+            <button type="submit" id="registerButton">REGISTRAR</button>
+
+            <div class="error-message" id="errorMessage"></div>
+
+            <div class="login-link">
+                ¿Ya tienes cuenta? <a href="/pages/auth/login.html">Inicia sesión</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Configuración
+        const API_URL = 'http://localhost:3000';
+        const REGISTER_ENDPOINT = `${API_URL}/users/create`;
+
+        // Elementos del DOM
+        const form = document.getElementById('registerForm');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const registerButton = document.getElementById('registerButton');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Toggle de visibilidad de contraseña
+        document.getElementById('togglePassword').addEventListener('click', () => {
+            togglePasswordVisibility(passwordInput);
+        });
+
+        document.getElementById('toggleConfirmPassword').addEventListener('click', () => {
+            togglePasswordVisibility(confirmPasswordInput);
+        });
+
+        function togglePasswordVisibility(input) {
+            const type = input.type === 'password' ? 'text' : 'password';
+            input.type = type;
+        }
+
+        // Validación de coincidencia de contraseñas
+        confirmPasswordInput.addEventListener('input', () => {
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                confirmPasswordInput.setCustomValidity('Las contraseñas no coinciden');
+            } else {
+                confirmPasswordInput.setCustomValidity('');
+            }
+        });
+
+        // Envío del formulario
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Validación manual (por si el navegador no lo hace)
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                showError('Las contraseñas no coinciden');
+                return;
+            }
+
+            // Deshabilitar botón y limpiar error
+            registerButton.disabled = true;
+            hideError();
+
+            try {
+                const formData = new FormData(form);
+                const userData = {
+                    name: formData.get('name').trim(),
+                    lastname: formData.get('lastname').trim(),
+                    email: formData.get('email').trim(),
+                    user_type: formData.get('user_type'),
+                    password_hash: formData.get('password'),
+                    username: `${formData.get('name').trim()}_${crypto.randomUUID()}`
+                };
+
+                const response = await fetch(REGISTER_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Registro exitoso → redirigir al login
+                    alert('¡Registro exitoso! Ahora inicia sesión.');
+                    window.location.href = '/pages/auth/login.html';
+                } else {
+                    showError(data.error || 'Error al crear la cuenta');
+                }
+            } catch (error) {
+                console.error('Error de red:', error);
+                showError('Error de conexión. Inténtalo más tarde.');
+            } finally {
+                registerButton.disabled = false;
+            }
+        });
+
+        // Funciones auxiliares
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>

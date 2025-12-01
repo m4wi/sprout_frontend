@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprout - Gestión de Greenpoints</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="border-2 border-black m-4 p-6 flex justify-between items-center bg-white">
+            <h1 class="text-4xl font-bold">Sprout</h1>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm">👤</div>
+                <div>
+                    <p class="font-semibold">Usuario</p>
+                    <p class="text-sm text-gray-600">Lorem</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Container -->
+        <div class="flex gap-4 px-4 pb-4 flex-1">
+            <!-- Left Sidebar -->
+            <div class="w-80 space-y-4">
+                <!-- Greenpoints Activos -->
+                <div class="border-2 border-black p-4 bg-white">
+                    <h2 class="text-xl font-bold mb-4">Greenpoints Activos</h2>
+                    <div class="space-y-3">
+                        <div class="border-2 border-black p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer transition" onclick="selectGreenpoint(this, 'GreenPoint 1')">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-bold">GreenPoint 1</p>
+                                    <p class="text-sm">12/12/12</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="border-2 border-black p-1 hover:bg-gray-200 transition" title="Editar">✏️</button>
+                                    <button class="border-2 border-black p-1 hover:bg-gray-200 transition" title="Eliminar" onclick="removeGreenpoint(event, 'GreenPoint 1')">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-2 border-black p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer transition" onclick="selectGreenpoint(this, 'GreenPoint 3')">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-bold">GreenPoint 3</p>
+                                    <p class="text-sm">12/12/12</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="border-2 border-black p-1 hover:bg-gray-200 transition">✏️</button>
+                                    <button class="border-2 border-black p-1 hover:bg-gray-200 transition" onclick="removeGreenpoint(event, 'GreenPoint 3')">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-2 border-black p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer transition" onclick="selectGreenpoint(this, 'GreenPoint 4')">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-bold">GreenPoint 4</p>
+                                    <p class="text-sm">12/12/12</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="border-2 border-black p-1 hover:bg-gray-200 transition">✏️</button>
+                                    <button class="border-2 border-black p-1 hover:bg-gray-200 transition" onclick="removeGreenpoint(event, 'GreenPoint 4')">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Greenpoints Finalizados -->
+                <div class="border-2 border-black p-4 bg-white">
+                    <h2 class="text-xl font-bold mb-4">Greenpoints Finalizados</h2>
+                    <div class="space-y-3">
+                        <div class="border-2 border-black p-3 bg-gray-50 flex justify-between items-center">
+                            <div>
+                                <p class="font-bold">GreenPoint 6</p>
+                                <p class="text-sm">12/12/12</p>
+                            </div>
+                            <button class="border-2 border-red-500 text-red-500 p-1 hover:bg-red-50 transition font-bold">✕</button>
+                        </div>
+
+                        <div class="border-2 border-black p-3 bg-gray-50 flex justify-between items-center">
+                            <div>
+                                <p class="font-bold">GreenPoint 2</p>
+                                <p class="text-sm">12/12/12</p>
+                            </div>
+                            <button class="border-2 border-red-500 text-red-500 p-1 hover:bg-red-50 transition font-bold">✕</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Content -->
+            <div class="flex-1 border-2 border-black p-6 bg-white">
+                <div id="contentArea">
+                    <!-- User Card -->
+                    <div class="border-2 border-black p-6 mb-6 bg-gray-50">
+                        <div class="flex justify-between items-start">
+                            <div class="flex gap-4 items-start flex-1">
+                                <div class="w-16 h-16 bg-green-800 rounded-full flex-shrink-0"></div>
+                                <div>
+                                    <p class="font-bold text-lg">Alan Gabriel Ludwig García Pérez</p>
+                                    <p class="text-gray-600">Greenpoints Activos</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <button class="border-2 border-black px-6 py-2 hover:bg-gray-100 transition font-semibold">Ver perfil</button>
+                                <button class="border-2 border-black px-6 py-2 hover:bg-gray-100 transition font-semibold">Añadir a <span class="line-through">contacto</span></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GreenPoint Details -->
+                    <div id="greenPointDetails">
+                        <div class="mb-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <h3 class="text-2xl font-bold">GreenPoint 1</h3>
+                                <p class="text-gray-600">creación 12/12/12</p>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <h4 class="font-bold text-lg mb-2">Materiales a reciclar:</h4>
+                                    <ul class="list-disc list-inside space-y-1 ml-2">
+                                        <li>Cartón 4kg</li>
+                                        <li>Aceite 12lt</li>
+                                        <li>Botellas de plástico 12kg</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <p><span class="font-semibold">Ubicación:</span> Av Bolognesi 256</p>
+                                </div>
+
+                                <div>
+                                    <p><span class="font-semibold">Finalización:</span> 25/12/12</p>
+                                </div>
+
+                                <div>
+                                    <p><span class="font-semibold">categorías:</span> papel, líquidos, botellas</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4 mt-8">
+                            <button class="border-2 border-black px-8 py-2 hover:bg-gray-100 transition font-semibold">Ver material</button>
+                            <button class="border-2 border-black px-8 py-2 hover:bg-gray-100 transition font-semibold">Abrir mapa</button>
+                        </div>
+                    </div>
+
+                    <div id="emptyState" class="text-center text-gray-400 py-12 hidden">
+                        <p class="text-lg">Selecciona un Greenpoint para ver los detalles</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="w-80 border-2 border-black p-4 bg-white">
+                <div class="space-y-4">
+                    <div class="border-2 border-black p-3 bg-gray-50">
+                        <p class="text-xs text-gray-600">Lorem ipsum is simply dummy text of the printing and typesetting industry. lorem ipsum has been the industry's standard</p>
+                    </div>
+                    <div class="border-2 border-black p-3 bg-gray-50">
+                        <p class="text-xs text-gray-600">Lorem ipsum is simply dummy text of the printing and typesetting industry. lorem ipsum has been the industry's standard</p>
+                    </div>
+                    <div class="border-2 border-black p-3 bg-gray-50">
+                        <p class="text-xs text-gray-600">Lorem ipsum is simply dummy text of the printing and typesetting industry. lorem ipsum has been the industry's standard</p>
+                    </div>
+                    <div class="border-2 border-black p-3 bg-gray-50">
+                        <p class="text-xs text-gray-600">Lorem ipsum is simply dummy text of the printing and typesetting industry. lorem ipsum has been the industry's standard</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function selectGreenpoint(element, name) {
+            document.querySelectorAll('.border-2.border-black.p-3.bg-gray-50').forEach(el => {
+                if (el.parentElement.classList.contains('space-y-3')) {
+                    el.style.backgroundColor = '';
+                }
+            });
+            element.style.backgroundColor = '#e5e7eb';
+            
+            const details = document.getElementById('greenPointDetails');
+            details.innerHTML = `
+                <div class="mb-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-2xl font-bold">${name}</h3>
+                        <p class="text-gray-600">creación 12/12/12</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-lg mb-2">Materiales a reciclar:</h4>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Cartón 4kg</li>
+                                <li>Aceite 12lt</li>
+                                <li>Botellas de plástico 12kg</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <p><span class="font-semibold">Ubicación:</span> Av Bolognesi 256</p>
+                        </div>
+
+                        <div>
+                            <p><span class="font-semibold">Finalización:</span> 25/12/12</p>
+                        </div>
+
+                        <div>
+                            <p><span class="font-semibold">categorías:</span> papel, líquidos, botellas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 mt-8">
+                    <button class="border-2 border-black px-8 py-2 hover:bg-gray-100 transition font-semibold">Ver material</button>
+                    <button class="border-2 border-black px-8 py-2 hover:bg-gray-100 transition font-semibold">Abrir mapa</button>
+                </div>
+            `;
+        }
+
+        function removeGreenpoint(event, name) {
+            event.stopPropagation();
+            event.target.closest('.border-2').remove();
+            console.log(`[v0] Greenpoint ${name} eliminado`);
+        }
+    </script>
+</body>
+</html>
