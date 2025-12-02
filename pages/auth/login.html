@@ -14,7 +14,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #2E7D32, #4CAF50);
+            background: linear-gradient(135deg, #223b0e, #4CAF50);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -109,10 +109,20 @@
             margin-top: 16px;
             display: none;
         }
+
+        .logo {
+            width: 60vh;
+            margin-bottom: 20px;
+            position: absolute;
+            top: 50%;
+            left: 30%;
+            transform: translate(-50%, -50%);
+        }
     </style>
 </head>
 
 <body>
+    <img src="/assets/images/hongo.png" alt="Logo" class="logo">
     <div class="login-container">
         <h1>Iniciar Sesión</h1>
         <form id="loginForm">

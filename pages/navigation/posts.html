@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/posts.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <title>Document</title>
 </head>
 
@@ -46,17 +48,17 @@
             </ul>
         </nav>
     </header>
-    <main>
+    <main id="mainContainer">
         <section>
             <div class="filter-bar">
                 <button class="filter-btn active" data-filter="all">Todos</button>
                 <button class="filter-btn" data-filter="mine">Mis publicaciones</button>
             </div>
         </section>
-        <section>
+        <section id="feedSection">
             <div id="feedContainer" class="feed"></div>
         </section>
-        <section>
+        <section id="chatSection">
             <div id="chatContainer" class="chatbox">
                 <div class="chat-header">
                     <div class="chat-user">
@@ -73,8 +75,45 @@
                     <button id="chatSendBtn">Enviar</button>
                 </div>
             </div>
+            <!-- Modal for Materials -->
+            <div id="materialModal" class="modal" style="display:none;">
+                <div class="modal-content">
+                    <span class="close-modal">&times;</span>
+                    <h3>Agregar Material</h3>
+                    <div class="form-group">
+                        <label>Cantidad</label>
+                        <input type="number" id="matQuantity" step="0.001" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Unidad</label>
+                        <select id="matUnit" style="padding: 0.75rem; border-radius: 12px; border: 2px solid #e8f5e9;">
+                            <option value="kg">Kg</option>
+                            <option value="unit">Unidad</option>
+                            <option value="lt">Litros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <input type="text" id="matDescription" placeholder="Detalles del material">
+                    </div>
+                    <button type="button" id="btnSaveMaterial" class="primary-btn">Guardar Material</button>
+                </div>
+            </div>
         </section>
     </main>
+
+    <!-- Map Modal -->
+    <div id="mapModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h3>Seleccionar Ubicación</h3>
+            <div id="formMapContainer" style="height: 400px; width: 100%;"></div>
+            <div class="modal-actions">
+                <button id="cancelMapBtn" class="secondary-btn">Cancelar</button>
+                <button id="confirmMapBtn" class="submit-btn">Confirmar Ubicación</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="/js/pages/posts.js"></script>
     <footer>
         <p class="info">© 2025 GreenPoints. Todos los derechos reservados.</p>
