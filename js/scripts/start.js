@@ -63,7 +63,8 @@ let mapInstance = null;
 // Función para obtener greenpoints por categoría
 const fetchGreenPointsByCategory = async (categoryId) => {
     try {
-        const response = await fetch(`http://localhost:3000/greenpoints/findCategory/${categoryId}`);
+        const headers = getAuthHeaders();
+        const response = await fetch(`http://localhost:3000/greenpoints/findCategory/${categoryId}`, { headers });
         if (!response.ok) {
             throw new Error('Error al obtener greenpoints');
         }
@@ -142,7 +143,8 @@ const renderGreenPoints = (greenpoints) => {
 
 async function cargarGreenPoints(map) {
     try {
-        const res = await fetch("http://localhost:3000/greenpoints"); // tu endpoint
+        const headers = getAuthHeaders();
+        const res = await fetch("http://localhost:3000/greenpoints", { headers }); // tu endpoint
         const data = await res.json();
 
         map.clearMarkers();
@@ -524,7 +526,8 @@ const init = () => {
             }
 
             try {
-                const response = await fetch(`http://localhost:3000/greenpoints/nearby?lat=${lat}&lng=${lng}&radius=5`);
+                const headers = getAuthHeaders();
+                const response = await fetch(`http://localhost:3000/greenpoints/nearby?lat=${lat}&lng=${lng}&radius=5`, { headers });
                 if (!response.ok) throw new Error('Error en la búsqueda');
 
                 const data = await response.json();
@@ -609,7 +612,77 @@ const init = () => {
         }
     }
 
-    // Manejo del formulario
+    // --- Manejo de Materiales (Modal) ---
+    const materialModal = document.getElementById('materialModal');
+    const btnAddMaterial = document.getElementById('btnAddMaterial');
+    const btnSaveMaterial = document.getElementById('btnSaveMaterial');
+    const materialsList = document.getElementById('materialsList');
+    const closeModal = document.querySelector('.close-modal');
+
+    let materials = []; // Array para almacenar materiales temporalmente
+
+    if (btnAddMaterial && materialModal) {
+        btnAddMaterial.addEventListener('click', () => {
+            materialModal.style.display = 'flex';
+            // Limpiar inputs del modal
+            document.getElementById('matQuantity').value = '';
+            document.getElementById('matDescription').value = '';
+        });
+    }
+
+    if (closeModal) {
+        closeModal.addEventListener('click', () => {
+            materialModal.style.display = 'none';
+        });
+    }
+
+    window.addEventListener('click', (e) => {
+        if (e.target === materialModal) {
+            materialModal.style.display = 'none';
+        }
+    });
+
+    if (btnSaveMaterial) {
+        btnSaveMaterial.addEventListener('click', () => {
+            const quantity = parseFloat(document.getElementById('matQuantity').value);
+            const unit = document.getElementById('matUnit').value;
+            const description = document.getElementById('matDescription').value;
+
+            if (isNaN(quantity) || quantity <= 0) {
+                alert('Ingresa una cantidad válida.');
+                return;
+            }
+
+            const material = { quantity, unit, description };
+            materials.push(material);
+
+            // Actualizar UI
+            renderMaterialsList();
+            materialModal.style.display = 'none';
+        });
+    }
+
+    function renderMaterialsList() {
+        if (!materialsList) return;
+        materialsList.innerHTML = '';
+        materials.forEach((mat, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span>${mat.quantity} ${mat.unit} - ${mat.description || ''}</span>
+                <button type="button" style="color:red; background:none; border:none; cursor:pointer;" onclick="removeMaterial(${index})">❌</button>
+            `;
+            materialsList.appendChild(li);
+        });
+    }
+
+    // Exponer función globalmente para el onclick
+    window.removeMaterial = (index) => {
+        materials.splice(index, 1);
+        renderMaterialsList();
+    };
+
+
+    // --- Manejo del formulario de registro ---
     const addForm = document.getElementById('addGreenpointForm');
     if (addForm) {
         addForm.addEventListener('submit', async (e) => {
@@ -622,13 +695,15 @@ const init = () => {
                 return;
             }
             const user = JSON.parse(userStr);
-            const id_citizen = user.id_user || user.id; // Ajustar según estructura del usuario
+            const id_citizen = user.id_user || user.id;
 
-            // Obtener datos del formulario
-            const description = document.getElementById('gpDescription').value;
+            // Validaciones básicas
             const coordsStr = coordsInput.value;
+            if (!coordsStr) {
+                alert('Selecciona una ubicación en el mapa.');
+                return;
+            }
 
-            // Obtener categorías seleccionadas
             const selectedCategories = Array.from(document.querySelectorAll('.checkbox-group input:checked'))
                 .map(cb => parseInt(cb.value));
 
@@ -637,63 +712,110 @@ const init = () => {
                 return;
             }
 
-            if (!coordsStr) {
-                alert('Selecciona una ubicación en el mapa.');
-                return;
-            }
+            // Obtener datos del formulario
+            const description = document.getElementById('gpDescription').value;
+            const direction = document.getElementById('gpDirection').value;
+            const hour = document.getElementById('gpHour').value;
+            const date_collect = document.getElementById('gpDateCollect').value;
+            const imagesInput = document.getElementById('gpImages');
 
-            // Parsear coordenadas
             const [lat, lng] = coordsStr.split(',').map(s => parseFloat(s.trim()));
 
-            const payload = {
-                id_category: selectedCategories[0], // Enviamos la primera como principal
-                coordinates: {
-                    latitude: lat,
-                    longitude: lng
-                },
-                description: description,
-                id_citizen: id_citizen,
-                // qr_code y stars son opcionales
-            };
+            const submitBtn = addForm.querySelector('.submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Procesando...';
 
             try {
-                const submitBtn = addForm.querySelector('.submit-btn');
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Registrando...';
-
-                const response = await fetch('http://localhost:3000/greenpoints', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Error al registrar');
+                const headers = getAuthHeaders();
+                if (!headers['Authorization']) {
+                    alert('No hay sesión activa.');
+                    return;
                 }
 
-                const newGp = await response.json();
-                alert('GreenPoint registrado con éxito!');
+                // 1. Crear GreenPoint
+                submitBtn.textContent = 'Creando GreenPoint...';
+                const gpPayload = {
+                    id_category: selectedCategories[0], // Principal
+                    coordinates: { latitude: lat, longitude: lng },
+                    description,
+                    id_citizen,
+                    hour,
+                    direction,
+                    date_collect
+                };
 
-                // Limpiar formulario y estado
+                const gpResponse = await fetch('http://localhost:3000/greenpoints', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(gpPayload)
+                });
+
+                if (!gpResponse.ok) {
+                    const err = await gpResponse.json();
+                    throw new Error(err.error || 'Error al crear GreenPoint');
+                }
+
+                const newGp = await gpResponse.json();
+                const gpId = newGp.id_greenpoint;
+                console.log('GreenPoint creado:', gpId);
+
+                // 2. Asignar Categorías (si hay más de una o para asegurar)
+                if (selectedCategories.length > 0) {
+                    submitBtn.textContent = 'Asignando categorías...';
+                    await fetch(`http://localhost:3000/greenpoints/${gpId}/categories`, {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({ categoryIds: selectedCategories })
+                    });
+                }
+
+                // 3. Asignar Materiales
+                if (materials.length > 0) {
+                    submitBtn.textContent = 'Registrando materiales...';
+                    await fetch(`http://localhost:3000/greenpoints/${gpId}/materials`, {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({ materials })
+                    });
+                }
+
+                // 4. Subir Imágenes
+                if (imagesInput.files.length > 0) {
+                    submitBtn.textContent = 'Subiendo imágenes...';
+                    for (const file of imagesInput.files) {
+                        const formData = new FormData();
+                        formData.append('photo', file);
+
+                        await fetch(`http://localhost:3000/greenpoints/${gpId}/photos`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': headers['Authorization']
+                            },
+                            body: formData
+                        });
+                    }
+                }
+
+                alert('¡GreenPoint registrado exitosamente con todos los detalles!');
+
+                // Resetear todo
                 addForm.reset();
+                materials = [];
+                renderMaterialsList();
                 coordsInput.value = '';
                 if (tempMarker) {
                     map.removeLayer(tempMarker);
                     tempMarker = null;
                 }
 
-                // Volver al modo búsqueda y recargar mapa
-                toggleBtn.click(); // Simula click para cerrar modo agregar
+                // Volver al mapa
+                toggleBtn.click();
                 cargarGreenPoints(mapInstance);
 
             } catch (error) {
-                console.error('Error:', error);
-                alert('Error: ' + error.message);
+                console.error('Error en el proceso:', error);
+                alert('Ocurrió un error: ' + error.message);
             } finally {
-                const submitBtn = addForm.querySelector('.submit-btn');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Registrar GreenPoint';
             }

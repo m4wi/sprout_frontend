@@ -1,32 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 
-<!--
-
-    Rutas que se necesita:
-
-    http://localhost:3000/greenpoints [*]
-    http://localhost:3000/greenpoints/:id []
-    http://localhost:3000/greenpoints/:id/category/:categoryId
-
-    -- obtener lo datos por geolocalizacion mandar una peticion a la api
-    -- obtener los datos del usuario o obtener los datos de localStorage
-    -- trazar el radio de aplicacion de la busqueda
-
-
-    -- traer los chat de manera para ponerlos en el menu de manera emergente
-    -- cargar los mensajes del chat directto - practicamente traer todo el chat
-    -- notficaciones que se abra como un popup para la interfaz asi que traer las notificaciones
-
-    -- preparar la subida de fotos - crear greenpoint y llamar al otro controllador
-
-
-
-
-
-
--->
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -187,13 +161,28 @@
                     <h2>Registrar Nuevo GreenPoint</h2>
                     <p>Selecciona la ubicación en el mapa y completa los datos.</p>
                     <form id="addGreenpointForm" class="add-form">
+                        <!-- Basic Info -->
                         <div class="form-group">
                             <label>Descripción</label>
                             <input type="text" id="gpDescription" placeholder="Ej: Contenedor en la plaza" required>
                         </div>
                         <div class="form-group">
+                            <label>Dirección</label>
+                            <input type="text" id="gpDirection" placeholder="Ej: Av. Bolognesi 123" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Horario de Atención</label>
+                            <input type="text" id="gpHour" placeholder="Ej: 9:00 AM - 6:00 PM">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Recogida</label>
+                            <input type="date" id="gpDateCollect">
+                        </div>
+
+                        <!-- Categories -->
+                        <div class="form-group">
                             <label>Categorías</label>
-                            <div class="checkbox-group">
+                            <div class="checkbox-group" id="gpCategoriesContainer">
                                 <label><input type="checkbox" value="1"> Plástico</label>
                                 <label><input type="checkbox" value="2"> Cartón</label>
                                 <label><input type="checkbox" value="3"> Metal</label>
@@ -201,12 +190,53 @@
                                 <label><input type="checkbox" value="5"> Papel</label>
                             </div>
                         </div>
+
+                        <!-- Materials -->
+                        <div class="form-group">
+                            <label>Materiales</label>
+                            <ul id="materialsList" class="materials-list">
+                                <!-- Items added via modal will appear here -->
+                            </ul>
+                            <button type="button" id="btnAddMaterial" class="secondary-btn">+ Agregar Material</button>
+                        </div>
+
+                        <!-- Images -->
+                        <div class="form-group">
+                            <label>Imágenes</label>
+                            <input type="file" id="gpImages" multiple accept="image/*">
+                        </div>
+
                         <div class="form-group">
                             <label>Coordenadas</label>
                             <input type="text" id="gpCoords" placeholder="Selecciona en el mapa" readonly required>
                         </div>
                         <button type="submit" class="submit-btn">Registrar GreenPoint</button>
                     </form>
+                </div>
+            </div>
+
+            <!-- Modal for Materials -->
+            <div id="materialModal" class="modal" style="display:none;">
+                <div class="modal-content">
+                    <span class="close-modal">&times;</span>
+                    <h3>Agregar Material</h3>
+                    <div class="form-group">
+                        <label>Cantidad</label>
+                        <input type="number" id="matQuantity" step="0.001" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Unidad</label>
+                        <select id="matUnit" style="padding: 0.75rem; border-radius: 12px; border: 2px solid #e8f5e9;">
+                            <option value="kg">Kg</option>
+                            <option value="unit">Unidad</option>
+                            <option value="lt">Litros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <input type="text" id="matDescription" placeholder="Detalles del material">
+                    </div>
+                    <button type="button" id="btnSaveMaterial" class="primary-btn">Guardar Material</button>
                 </div>
             </div>
         </section>
