@@ -101,8 +101,123 @@ style.textContent = `
   .edit-btn:hover {
     background-color: #5a6268;
   }
+
+  /* Chat Skeleton */
+  .chat-skeleton {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      height: 100%;
+      justify-content: center;
+      opacity: 0.6;
+  }
+  .skel-row { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+  .skel-avatar { width: 40px; height: 40px; border-radius: 50%; background: #e0e0e0; }
+  .skel-text-col { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .skel-line { height: 10px; background: #e0e0e0; border-radius: 4px; width: 100%; }
+  .skel-line.short { width: 60%; }
+  .skel-msg { height: 40px; width: 80%; background: #e0e0e0; border-radius: 8px; margin-bottom: 10px; }
+  .skel-msg.right { align-self: flex-end; background: #d1e7dd; }
 `;
 document.head.appendChild(style);
+
+function restoreChatUI() {
+    const chatSection = document.getElementById('chatSection');
+    if (!chatSection) return;
+
+    // Check if chatContainer already exists and is valid
+    if (document.getElementById('chatContainer')) return;
+
+    chatSection.innerHTML = `
+        <div id="chatContainer" class="chatbox">
+            <div class="chat-header">
+                <div class="chat-user">
+                    <img id="chatAvatar" class="avatar" src="" alt="" style="display:none">
+                    <div>
+                        <div id="chatUsername" class="username"></div>
+                        <div id="chatSubtitle" class="subtitle"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="chatMessages" class="chat-messages">
+                <!-- Skeleton State -->
+                <div class="chat-skeleton">
+                    <div class="skel-row">
+                        <div class="skel-avatar"></div>
+                        <div class="skel-text-col">
+                            <div class="skel-line"></div>
+                            <div class="skel-line short"></div>
+                        </div>
+                    </div>
+                    <div class="skel-msg"></div>
+                    <div class="skel-msg right"></div>
+                    <div class="skel-msg"></div>
+                    <div class="text-center text-gray-400 text-sm mt-4">Selecciona un chat para comenzar</div>
+                </div>
+            </div>
+            <div class="chat-input">
+                <input id="chatMessageInput" type="text" placeholder="Escribe un mensaje">
+                <button id="chatSendBtn">Enviar</button>
+            </div>
+        </div>
+        <!-- Modal for Materials (Restored) -->
+        <div id="materialModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h3>Agregar Material</h3>
+                <div class="form-group">
+                    <label>Cantidad</label>
+                    <input type="number" id="matQuantity" step="0.001" required>
+                </div>
+                <div class="form-group">
+                    <label>Unidad</label>
+                    <select id="matUnit" style="padding: 0.75rem; border-radius: 12px; border: 2px solid #e8f5e9;">
+                        <option value="kg">Kg</option>
+                        <option value="unit">Unidad</option>
+                        <option value="lt">Litros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <input type="text" id="matDescription" placeholder="Detalles del material">
+                </div>
+                <button type="button" id="btnSaveMaterial" class="primary-btn">Guardar Material</button>
+            </div>
+        </div>
+    `;
+
+    // Re-bind global variables
+    const newChatContainer = document.getElementById('chatContainer');
+    const newChatMessages = document.getElementById('chatMessages');
+    const newChatSendBtn = document.getElementById('chatSendBtn');
+    const newChatMessageInput = document.getElementById('chatMessageInput');
+    const newChatAvatar = document.getElementById('chatAvatar');
+    const newChatUsername = document.getElementById('chatUsername');
+    const newChatSubtitle = document.getElementById('chatSubtitle');
+
+    // Re-attach event listeners
+    if (newChatSendBtn) {
+        newChatSendBtn.addEventListener('click', () => {
+            const text = newChatMessageInput.value.trim();
+            if (!text) return; // Allow sending even if no active chat for demo? No, check activeChat
+
+            // If skeleton is present, clear it on first message? 
+            // Or better, only allow sending if activeChat is set.
+            if (!activeChat) {
+                alert('Selecciona una publicación para chatear');
+                return;
+            }
+
+            const bubble = document.createElement('div');
+            bubble.className = 'msg msg-out';
+            bubble.textContent = text;
+            newChatMessages.appendChild(bubble);
+            newChatMessageInput.value = '';
+            newChatMessages.scrollTop = newChatMessages.scrollHeight;
+        });
+    }
+}
 
 function timeAgo(ts) {
     const d = new Date(ts);
@@ -274,7 +389,7 @@ async function renderMyPosts(page = 1) {
             viewResBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>';
             viewResBtn.title = 'Ver Reservas';
             viewResBtn.onclick = () => {
-                alert('Funcionalidad de ver reservas en construcción');
+                renderReservationsList(gp.id_greenpoint);
             };
 
             // Edit
@@ -582,7 +697,7 @@ async function renderFeed(page = 1) {
 
         for (const gp of posts) {
             // Optional: Skip my own posts if strictly desired, but better to show them with "Tu publicación"
-            if (gp.id_citizen === currentUserId) continue;
+            // if (gp.id_citizen === currentUserId) continue;
 
             const card = document.createElement('article');
             card.className = 'card';
@@ -619,6 +734,23 @@ async function renderFeed(page = 1) {
             userSection.appendChild(hinfo);
 
             header.appendChild(userSection);
+
+            // Header Actions
+            const headerActions = document.createElement('div');
+            headerActions.className = 'header-actions';
+
+            // Report Button (Only if not my post)
+            if (gp.id_citizen !== currentUserId) {
+                const reportBtn = document.createElement('button');
+                reportBtn.className = 'header-action-btn';
+                reportBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
+                reportBtn.title = 'Reportar';
+                reportBtn.style.color = '#ef4444';
+                reportBtn.onclick = () => openReportModal(gp.id_greenpoint);
+                headerActions.appendChild(reportBtn);
+            }
+
+            header.appendChild(headerActions);
 
             const body = document.createElement('div');
             body.className = 'card-body';
@@ -725,8 +857,8 @@ async function renderFeed(page = 1) {
                 btnClass = 'btn-blue';
                 btnDisabled = true;
             }
-            else if (currentUserId && gp.id_collector === currentUserId) {
-                btnText = 'Aceptado';
+            else if (gp.status === 'reserved') {
+                btnText = 'Reservado';
                 btnClass = 'btn-orange';
                 btnDisabled = true;
             }
@@ -734,12 +866,13 @@ async function renderFeed(page = 1) {
                 btnText = 'Pendiente';
                 btnClass = 'btn-yellow';
                 btnDisabled = true;
+                console.log(gp.id_greenpoint);
             }
-            else if (gp.id_collector && gp.id_collector !== currentUserId) {
-                btnText = 'No disponible';
-                btnDisabled = true;
-                reserveBtn.style.opacity = '0.5';
-            }
+            //else if (gp.id_collector && gp.id_collector !== currentUserId) {
+            //    btnText = 'No disponible';
+            //    btnDisabled = true;
+            //    reserveBtn.style.opacity = '0.5';
+            //}
 
             reserveBtn.textContent = btnText;
             if (btnClass) reserveBtn.classList.add(btnClass);
@@ -765,10 +898,23 @@ async function renderFeed(page = 1) {
             chatBtn.textContent = 'Chat';
             chatBtn.addEventListener('click', () => {
                 activeChat = { user, greenpoint: gp };
-                chatAvatar.src = avatar.src;
-                chatUsername.textContent = uname.textContent;
-                chatSubtitle.textContent = 'Conversación';
-                chatMessages.innerHTML = '';
+
+                // Ensure UI is restored if missing
+                restoreChatUI();
+
+                const currentChatAvatar = document.getElementById('chatAvatar');
+                const currentChatUsername = document.getElementById('chatUsername');
+                const currentChatSubtitle = document.getElementById('chatSubtitle');
+                const currentChatMessages = document.getElementById('chatMessages');
+
+                if (currentChatAvatar) {
+                    currentChatAvatar.src = avatar.src;
+                    currentChatAvatar.style.display = 'block';
+                }
+                if (currentChatUsername) currentChatUsername.textContent = uname.textContent;
+                if (currentChatSubtitle) currentChatSubtitle.textContent = 'Conversación';
+                if (currentChatMessages) currentChatMessages.innerHTML = '';
+
                 // Scroll to chat or open modal? Original just set activeChat.
                 // Assuming the chat container is visible in this view.
             });
@@ -921,7 +1067,10 @@ filterButtons.forEach(btn => {
             if (mainContainer) mainContainer.style.gridTemplateColumns = ' 250px 3fr 2fr'
             await renderMyPosts(1);
         } else {
-            if (chatContainer) chatContainer.style.display = '';
+            restoreChatUI();
+            const restoredChat = document.getElementById('chatContainer');
+            if (restoredChat) restoredChat.style.display = '';
+
             if (mainContainer) mainContainer.style.gridTemplateColumns = ' 250px 1fr 350px'
             renderFeed(1);
         }
@@ -1353,6 +1502,126 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+
+async function acceptReservation(reservationId) {
+    try {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${API_BASE}/api/reservations/${reservationId}/accept`, {
+            method: 'PATCH',
+            headers: headers
+        });
+        if (!res.ok) throw new Error('Error al aceptar reserva');
+        return true;
+    } catch (err) {
+        console.error(err);
+        alert('Error al aceptar la reserva');
+        return false;
+    }
+}
+
+async function renderReservationsList(greenpointId) {
+    const chatSection = document.getElementById('chatSection');
+    // Save original content if needed? For now just overwrite as per request.
+    chatSection.innerHTML = '<div style="padding:20px; text-align:center;">Cargando reservas...</div>';
+
+    try {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${API_BASE}/api/greenpoints/${greenpointId}/reservations?status=pending`, {
+            headers: headers
+        });
+
+        if (!res.ok) throw new Error('Error al obtener reservas');
+
+        const data = await res.json();
+        const reservations = data.reservations || [];
+
+        chatSection.innerHTML = '';
+
+        const container = document.createElement('div');
+        container.className = 'chatbox';
+
+        const header = document.createElement('div');
+        header.className = 'chat-header';
+        header.innerHTML = '<h3>Interesados</h3>';
+        container.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'chat-messages';
+
+        if (reservations.length === 0) {
+            list.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">No hay reservas pendientes.</div>';
+        } else {
+            for (const r of reservations) {
+                const item = document.createElement('div');
+                item.className = 'reservation-item';
+                item.style.cssText = 'padding: 10px; border-bottom: 1px solid #eee; display: flex; flex-direction: column; gap: 10px;';
+
+                // User Info
+                const userDiv = document.createElement('div');
+                userDiv.style.cssText = 'display: flex; align-items: center; gap: 10px;';
+
+                const avatar = document.createElement('img');
+                avatar.className = 'avatar sm';
+                avatar.src = r.collector_avatar ? `${API_BASE}/profile_photo/${r.collector_avatar}.webp` : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (r.collector_username || 'user');
+
+                const info = document.createElement('div');
+                const name = document.createElement('div');
+                name.className = 'username';
+                name.textContent = `${r.collector_name || ''} ${r.collector_lastname || ''}`.trim() || r.collector_username;
+                const time = document.createElement('div');
+                time.className = 'subtitle';
+                time.textContent = timeAgo(r.created_at);
+
+                info.appendChild(name);
+                info.appendChild(time);
+                userDiv.appendChild(avatar);
+                userDiv.appendChild(info);
+
+                // Buttons
+                const actionsDiv = document.createElement('div');
+                actionsDiv.style.cssText = 'display: flex; gap: 10px;';
+
+                const profileBtn = document.createElement('button');
+                profileBtn.textContent = 'Ver Perfil';
+                profileBtn.className = 'secondary-btn';
+                profileBtn.style.fontSize = '0.8rem';
+                profileBtn.style.padding = '0.4rem 0.8rem';
+                profileBtn.onclick = () => alert(`Ver perfil de: ${r.collector_username}`);
+
+                const acceptBtn = document.createElement('button');
+                acceptBtn.textContent = 'Aceptar';
+                acceptBtn.className = 'submit-btn'; // Use submit-btn style (green)
+                acceptBtn.style.fontSize = '0.8rem';
+                acceptBtn.style.padding = '0.4rem 0.8rem';
+                acceptBtn.onclick = async () => {
+                    if (confirm(`¿Aceptar a ${r.collector_username} como recolector?`)) {
+                        const success = await acceptReservation(r.id_reservation);
+                        if (success) {
+                            alert('Reserva aceptada exitosamente');
+                            renderReservationsList(greenpointId); // Refresh list
+                            renderMyPosts(myPage); // Refresh posts to show "Aceptado" status
+                        }
+                    }
+                };
+
+                actionsDiv.appendChild(profileBtn);
+                actionsDiv.appendChild(acceptBtn);
+
+                item.appendChild(userDiv);
+                item.appendChild(actionsDiv);
+                list.appendChild(item);
+            }
+        }
+
+        container.appendChild(list);
+        chatSection.appendChild(container);
+
+    } catch (error) {
+        console.error(error);
+        chatSection.innerHTML = '<div style="padding:20px; text-align:center; color:red;">Error al cargar reservas</div>';
+    }
+}
+
 async function deleteGreenPoint(id) {
     try {
         const headers = getAuthHeaders();
@@ -1376,4 +1645,62 @@ async function deleteGreenPoint(id) {
     await fetchMyReservations();
     renderFeed(1);
 })();
+
+
+// Report Modal Logic
+function openReportModal(greenpointId) {
+    const modal = document.getElementById('reportModal');
+    const form = document.getElementById('reportForm');
+    const gpIdInput = document.getElementById('reportGreenpointId');
+
+    if (modal && form && gpIdInput) {
+        gpIdInput.value = greenpointId;
+        form.reset();
+        modal.style.display = 'flex';
+    }
+}
+
+const reportModal = document.getElementById('reportModal');
+const closeReportModal = document.getElementById('closeReportModal');
+const reportForm = document.getElementById('reportForm');
+
+if (closeReportModal) {
+    closeReportModal.onclick = () => reportModal.style.display = 'none';
+}
+
+if (reportModal) {
+    window.onclick = (event) => {
+        if (event.target == reportModal) {
+            reportModal.style.display = "none";
+        }
+    }
+}
+
+if (reportForm) {
+    reportForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id_greenpoint = document.getElementById('reportGreenpointId').value;
+        const type = document.getElementById('reportType').value;
+        const message = document.getElementById('reportMessage').value;
+
+        try {
+            const res = await fetch(`${API_BASE}/reports`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ id_greenpoint, type, message })
+            });
+
+            if (res.ok) {
+                alert('Reporte enviado correctamente.');
+                reportModal.style.display = 'none';
+            } else {
+                const err = await res.json();
+                alert('Error al enviar reporte: ' + (err.error || 'Desconocido'));
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error de conexión al enviar reporte.');
+        }
+    });
+}
 

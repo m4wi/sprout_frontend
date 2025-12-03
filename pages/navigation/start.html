@@ -7,84 +7,14 @@
     <title>Inicio - GreenPoints</title>
     <!-- Leaflet para el mapa -->
     <script src="/public/js/leaflet.js"></script>
-    <!DOCTYPE html>
-    <html lang="es">
-
-    <!--
-
-    Rutas que se necesita:
-
-    http://localhost:3000/greenpoints [*]
-    http://localhost:3000/greenpoints/:id []
-    http://localhost:3000/greenpoints/:id/category/:categoryId
-
-    -- obtener lo datos por geolocalizacion mandar una peticion a la api
-    -- obtener los datos del usuario o obtener los datos de localStorage
-    -- trazar el radio de aplicacion de la busqueda
-
-
-    -- traer los chat de manera para ponerlos en el menu de manera emergente
-    -- cargar los mensajes del chat directto - practicamente traer todo el chat
-    -- notficaciones que se abra como un popup para la interfaz asi que traer las notificaciones
-
-    -- preparar la subida de fotos - crear greenpoint y llamar al otro controllador
-
-
-
-
-
-
--->
-
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Inicio - GreenPoints</title>
-        <!-- Leaflet para el mapa -->
-        <script src="/public/js/leaflet.js"></script>
-        <link rel="stylesheet" href="/public/css/leaflet.css">
-        <!-- Estilos -->
-        <link rel="stylesheet" href="/css/layout.css">
-        <link rel="stylesheet" href="/css/start.css">
-    </head>
+    <link rel="stylesheet" href="/public/css/leaflet.css">
+    <!-- Estilos -->
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/start.css">
+</head>
 
 <body>
-    <header>
-        <div class="logo">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                <path fill="currentColor"
-                    d="M11.25 22q-.825 0-1.662-.187t-1.713-.538q.3-3.025 1.75-5.65T13.35 11q-2.75 1.4-4.762 3.7t-2.813 5.25q-.1-.075-.187-.162L5.4 19.6q-1.175-1.175-1.787-2.625T3 13.95q0-1.7.675-3.25T5.55 7.95Q7.3 6.2 9.888 5.5t6.987-.5q.65.025 1.2.288t.975.687t.675.988t.3 1.212q.15 4.5-.525 7.025t-2.4 4.25q-1.225 1.225-2.738 1.888T11.25 22" />
-            </svg>
-            GREENPOINTS TACNA
-        </div>
-
-        <button class="mobile-menu-btn">☰</button>
-
-        <nav>
-            <ul class="nav-menu">
-                <li><a href="/pages/navigation/start.html"><svg xmlns="http://www.w3.org/2000/svg" width="24"
-                            height="24" viewBox="0 0 24 24">
-                            <path fill="currentColor"
-                                d="M6 20q-.825 0-1.412-.587T4 18v-7.375L3 11.4q-.325.25-.737.2t-.663-.4q-.25-.325-.187-.725t.387-.65l9-6.9q.275-.2.588-.3t.637-.1t.625.1t.575.3L20.7 8.65q.475.35.238.9t-.813.475q-.65-.075-1.312.013t-1.313.337q-1.5-.575-3.088-.262t-2.787 1.512t-1.513 2.788t.263 3.087q-.15.4-.25.8t-.125.825q-.025.35-.262.613T9.15 20zm11.5 2.375q-1.05.725-2.312.613t-2.163-1.013t-1.012-2.162t.612-2.313q-.725-1.05-.612-2.312t1.012-2.163t2.163-1.012t2.312.612q1.05-.725 2.313-.612t2.162 1.012t1.013 2.163t-.613 2.312q.725 1.05.613 2.313t-1.013 2.162t-2.162 1.013t-2.313-.613m0-3.625q.525 0 .888-.363t.362-.887t-.363-.888t-.887-.362t-.888.363t-.362.887t.363.888t.887.362" />
-                        </svg> INICIO</a></li>
-                <li><a href="/pages/navigation/posts.html"><svg xmlns="http://www.w3.org/2000/svg" width="24"
-                            height="24" viewBox="0 0 24 24">
-                            <path fill="currentColor"
-                                d="M12 21.5q-1.975 0-3.7-.75t-3.012-2.037T3.25 15.7T2.5 12t.75-3.7t2.038-3.012T8.3 3.25T12 2.5V1.2q0-.35.3-.475t.55.125L15.3 3.3q.3.3.3.7t-.3.7l-2.45 2.45q-.25.25-.55.125T12 6.8V5.5q-2.7 0-4.6 1.9T5.5 12q0 1.65.762 3.063T8.3 17.35q.4-.7 1.188-1.187t1.812-.613q-.075-.525-.2-1.05t-.3-.975q-.275.225-.6.35T9.5 14q-.825 0-1.412-.587T7.5 12v-1q0-.2-.038-.387t-.087-.363q-.125-.275.038-.513t.437-.212q1.125.05 2.375.55T11.5 12q0 .225-.037.413t-.138.387q-.325-.25-.65-.45T10 12q.425.325.975 1T12 14.6q.5-1.225 1.25-2.412T15 10q-.575.4-1.1.85t-1.025.95q-.175-.275-.275-.612t-.1-.688q0-1.05.725-1.775T15 8h1q.35 0 .738-.088t.662-.337q.175-.175.4-.088t.225.338q0 .625-.087 1.513t-.4 1.7t-.913 1.387T15 13q-.375 0-.712-.1t-.613-.275q-.175.475-.4 1.263t-.35 1.687q.95.175 1.675.65t1.1 1.125q1.05-.725 1.75-1.8t.95-2.375q.125-.625.563-1.05T20 11.7q.65 0 1.088.463t.337 1.087q-.45 3.525-3.113 5.888T12 21.5" />
-                        </svg> PUBLICACIONES</a></li>
-                <li><a href="/pages/navigation/book.html"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                            viewBox="0 0 24 24">
-                            <path fill="currentColor"
-                                d="M5 22q-.825 0-1.412-.587T3 20V6q0-.825.588-1.412T5 4h1V3q0-.425.288-.712T7 2t.713.288T8 3v1h8V3q0-.425.288-.712T17 2t.713.288T18 3v1h1q.825 0 1.413.588T21 6v4.675q0 .425-.288.713t-.712.287t-.712-.288t-.288-.712V10H5v10h5.8q.425 0 .713.288T11.8 21t-.288.713T10.8 22zm13 1q-2.075 0-3.537-1.463T13 18t1.463-3.537T18 13t3.538 1.463T23 18t-1.463 3.538T18 23m.5-5.2v-2.3q0-.2-.15-.35T18 15t-.35.15t-.15.35v2.275q0 .2.075.388t.225.337l1.525 1.525q.15.15.35.15t.35-.15t.15-.35t-.15-.35z" />
-                        </svg> RESERVAS</a></li>
-                <li><a href="/pages/navigation/profile.html"><svg xmlns="http://www.w3.org/2000/svg" width="24"
-                            height="24" viewBox="0 0 24 24">
-                            <path fill="currentColor"
-                                d="M4.625 22q-.425 0-.737-.312t-.313-.738v-2.625q0-2.25 1.4-3.975t3.6-2.2q-1 .7-1.55 1.762t-.55 2.288v4.75q0 .275.075.55t.25.5zM8.3 22q-.425 0-.737-.312t-.313-.738V16.2q0-1.75 1.238-2.975T11.475 12H16.2q1.75 0 2.975 1.225T20.4 16.2v1.6q0 1.75-1.225 2.975T16.2 22zM12 9.9q-1.65 0-2.8-1.15t-1.15-2.8t1.15-2.8T12 2t2.8 1.15t1.15 2.8t-1.15 2.8T12 9.9" />
-                        </svg> PERFIL</a></li>
-            </ul>
-        </nav>
-    </header>
+    <div id="header-container"></div>
     <main>
         <section>
             <!-- MODO BÚSQUEDA -->
@@ -93,50 +23,50 @@
                 <div class="search-container">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                         <path fill="currentColor"
-                            d="M9.5 16q-2.725 0-4.612-1.888T3 9.5t1.888-4.612T9.5 3t4.613 1.888T16 9.5t-1.887 4.612T9.5 16m9.5 4l-5.5-5.5q-.75.625-1.725.975T9.5 16q-3.35 0-5.675-2.325T1.5 8t2.325-5.675T9.5 0t5.675 2.325T17.5 8q0 1.1-.35 2.075T16.175 11.85L21.7 17.375z" />
+                            d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5A6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
                     </svg>
-                    <input type="search" id="searchInput" placeholder="Buscar greenpoints..." />
+                    <input type="search" placeholder="Buscar puntos de reciclaje...">
+
                     <div class="user-notifications">
                         <div class="notification-icon" id="notificationBtn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                                 <path fill="currentColor"
-                                    d="M12 18.5q.625 0 1.063-.437T13.5 17h-3q0 .625.438 1.063T12 18.5M7 16h10v-2h-1v-2.6q0-1.525-.788-2.787T13 7v-.5q0-.425-.288-.712T12 5.5t-.712.288T11 6.5V7q-1.425.35-2.212 1.613T8 11.4V14H7zm5 6q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22" />
+                                    d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z" />
                             </svg>
                             <span class="notification-badge" id="notificationCount" style="display: none;">0</span>
 
-                            <!-- Popup de Notificaciones -->
+                            <!-- Popup de notificaciones -->
                             <div class="notification-popup" id="notificationPopup">
                                 <div class="popup-header">
                                     <h3>Notificaciones</h3>
-                                    <button id="markAllReadBtn" class="mark-read-btn">Marcar todo leído</button>
+                                    <button class="mark-read-btn" id="markAllReadBtn">Marcar todo como leído</button>
                                 </div>
                                 <div class="popup-content" id="notificationList">
-                                    <p class="empty-msg">Cargando...</p>
+                                    <!-- Items dinámicos -->
                                 </div>
                             </div>
                         </div>
-                        <a href="/pages/navigation/profile.html">
-                            <img id="userAvatar" class="user-avatar" src="" alt="Avatar del usuario" />
-                        </a>
+                        <img src="" alt="Usuario" class="user-avatar" id="userAvatar">
                     </div>
                 </div>
 
                 <!-- Filtros -->
                 <div class="filters-section">
-                    <p>Filtrar por:</p>
+                    <p>Filtros</p>
                     <div class="filter-buttons">
-                        <button data-category="plastico" data-id="1">♻️ Plástico</button>
-                        <button data-category="carton" data-id="2">📦 Cartón</button>
-                        <button data-category="metal" data-id="3">🔩 Metal</button>
-                        <button data-category="vidrio" data-id="4">🍶 Vidrio</button>
-                        <button data-category="papel" data-id="5">📄 Papel</button>
-                        <button id="btn-geolocalizacion">📍 Geolocalización</button>
+                        <button class="active" data-category="all">Todos</button>
+                        <button data-category="plastic" data-id="1">Plástico</button>
+                        <button data-category="paper" data-id="2">Papel</button>
+                        <button data-category="glass" data-id="4">Vidrio</button>
+                        <button data-category="metal" data-id="3">Metal</button>
+                        <button data-category="organic" data-id="5">Orgánico</button>
+                        <button id="btn-geolocalizacion">📍 Búsqueda Avanzada</button>
                     </div>
                 </div>
 
-                <!-- Geolocation Search UI (Hidden by default) -->
-                <div id="geolocationSearch" class="geolocation-search-container" style="display: none;">
-                    <h3>Buscar por Ubicación</h3>
+                <!-- Búsqueda por Geolocalización (Oculto por defecto) -->
+                <div class="geolocation-search-container" id="geolocationSearch" style="display: none;">
+                    <h3>Búsqueda por Ubicación</h3>
                     <div class="geo-inputs">
                         <input type="number" id="geoLat" placeholder="Latitud" step="any">
                         <input type="number" id="geoLng" placeholder="Longitud" step="any">
@@ -144,8 +74,8 @@
                     <div class="geo-actions">
                         <button id="btn-select-map-geo" class="geo-btn">📍 Seleccionar en Mapa</button>
                         <button id="btn-use-current-geo" class="geo-btn">🎯 Mi Ubicación</button>
-                        <button id="btn-search-geo-action" class="geo-btn primary">🔍 Buscar</button>
-                        <button id="btn-cancel-geo" class="geo-btn cancel">❌ Cancelar</button>
+                        <button id="btn-search-geo-action" class="geo-btn primary">Buscar</button>
+                        <button id="btn-cancel-geo" class="geo-btn cancel">Cancelar</button>
                     </div>
                 </div>
 
@@ -176,18 +106,33 @@
                         </div>
                         <div class="form-group">
                             <label>Fecha de Recogida</label>
-                            <input type="date" id="gpDateCollect">
+                            <input type="date" id="gpDateCollect" class="styled-date-input">
                         </div>
 
                         <!-- Categories -->
                         <div class="form-group">
                             <label>Categorías</label>
                             <div class="checkbox-group" id="gpCategoriesContainer">
-                                <label><input type="checkbox" value="1"> Plástico</label>
-                                <label><input type="checkbox" value="2"> Cartón</label>
-                                <label><input type="checkbox" value="3"> Metal</label>
-                                <label><input type="checkbox" value="4"> Vidrio</label>
-                                <label><input type="checkbox" value="5"> Papel</label>
+                                <label class="category-checkbox" style="--cat-color: #4CAF50;">
+                                    <input type="checkbox" value="1">
+                                    <span>Plástico</span>
+                                </label>
+                                <label class="category-checkbox" style="--cat-color: #FF9800;">
+                                    <input type="checkbox" value="2">
+                                    <span>Cartón</span>
+                                </label>
+                                <label class="category-checkbox" style="--cat-color: #607D8B;">
+                                    <input type="checkbox" value="3">
+                                    <span>Metal</span>
+                                </label>
+                                <label class="category-checkbox" style="--cat-color: #2196F3;">
+                                    <input type="checkbox" value="4">
+                                    <span>Vidrio</span>
+                                </label>
+                                <label class="category-checkbox" style="--cat-color: #795548;">
+                                    <input type="checkbox" value="5">
+                                    <span>Papel</span>
+                                </label>
                             </div>
                         </div>
 
@@ -203,7 +148,17 @@
                         <!-- Images -->
                         <div class="form-group">
                             <label>Imágenes</label>
-                            <input type="file" id="gpImages" multiple accept="image/*">
+                            <div class="image-upload-container">
+                                <label for="gpImages" class="drop-area">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                                        <path fill="currentColor"
+                                            d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5c0-2.64-2.05-4.78-4.65-4.96M14 13v4h-4v-4H7l5-5l5 5z" />
+                                    </svg>
+                                    <span>Subir Imágenes</span>
+                                    <input type="file" id="gpImages" multiple accept="image/*" hidden>
+                                </label>
+                                <div id="imagePreviewContainer" class="image-preview-container"></div>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -259,6 +214,7 @@
         </nav>
     </footer>
     <script type="module" src="/js/scripts/start.js"></script>
+    <script src="/js/components.js"></script>
 </body>
 
 </html>

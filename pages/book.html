@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Libro de Reservas - GreenPoints</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <style>
+        /* Custom styles from posts.js injected style */
+        .photo-grid {
+            display: grid;
+            gap: 4px;
+            width: 100%;
+            height: 300px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            cursor: pointer;
+        }
+
+        .photo-grid.one {
+            grid-template-columns: 1fr;
+        }
+
+        .photo-grid.two {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .photo-grid.three {
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: 1fr 1fr;
+        }
+
+        .photo-item {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-grid.three .photo-item:nth-child(1) {
+            grid-row: 1 / 3;
+        }
+
+        .photo-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .more-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .category-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .category-tag {
+            padding: 4px 12px;
+            border-radius: 16px;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .material-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .material-table th,
+        .material-table td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        .material-table th {
+            font-weight: 600;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body
+    class="flex flex-col min-h-screen font-sans bg-white text-green-900 dark:bg-gray-900 dark:text-green-200 transition-colors duration-300">
+    <!-- Header (copied from green.html) -->
+    <div class="p-4">
+        <header
+            class="bg-white/90 dark:bg-gray-900/80 backdrop-blur-md text-gray-800 dark:text-gray-100 rounded-3xl shadow-xl px-6 py-4 flex justify-between items-center font-sans tracking-wide z-50">
+            <div class="flex items-center gap-3">
+                <img src="../assets/soybean.svg" alt="GreenPoints Logo" class="w-10 h-10 rounded-full">
+                <span class="text-xl font-bold text-[#c7bda9] dark:text-green-400">Sprouts</span>
+            </div>
+            <nav class="flex gap-6 text-sm font-medium">
+                <a href="index.html" class="hover:text-[#075330] dark:hover:text-green-400 transition">mapa</a>
+                <a href="green.html" class="hover:text-[#075330] dark:hover:text-green-400 transition">mis
+                    greenpoints</a>
+                <a href="perfil.html" class="hover:text-[#075330] dark:hover:text-green-400 transition">perfil</a>
+            </nav>
+            <div class="flex gap-3 items-center">
+                <button id="themeToggle"
+                    class="px-3 py-2 bg-[#075330] text-white text-sm rounded-full shadow-md hover:bg-[#064127] transition">🌞/🌙</button>
+                <div id="auth-buttons" class="flex gap-3 items-center">
+                    <button onclick="abrirModal('login')"
+                        class="px-4 py-2 bg-white text-[#075330] font-semibold rounded-lg shadow hover:bg-gray-100 dark:bg-gray-700 dark:text-green-200 dark:hover:bg-gray-600 transition">login</button>
+                    <button onclick="abrirModal('register')"
+                        class="px-4 py-2 bg-yellow-400 text-green-900 font-semibold rounded-lg shadow hover:bg-yellow-300 dark:bg-yellow-500 dark:text-gray-900 transition">signup</button>
+                </div>
+                <div id="user-info" class="hidden flex items-center gap-3">
+                    <span id="user-name" class="font-semibold text-[#075330] dark:text-green-200"></span>
+                    <button onclick="cerrarSesion()"
+                        class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">Salir</button>
+                </div>
+            </div>
+        </header>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 flex gap-6 min-h-0">
+        <!-- Col 1: List -->
+        <div class="w-1/4 space-y-6 flex flex-col">
+            <!-- Active -->
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow flex-1 flex flex-col">
+                <h2 class="text-xl font-bold text-green-600 mb-4">Activos (Reservados)</h2>
+                <div id="list-active" class="space-y-3 overflow-y-auto flex-1">
+                    <!-- Skeleton Item -->
+                    <div class="animate-pulse flex space-x-4">
+                        <div class="flex-1 space-y-2 py-1">
+                            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                            <div class="h-4 bg-gray-200 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Finished -->
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow flex-1 flex flex-col">
+                <h2 class="text-xl font-bold text-green-600 mb-4">Finalizados</h2>
+                <div id="list-finished" class="space-y-3 overflow-y-auto flex-1">
+                    <!-- Skeleton Item -->
+                    <div class="animate-pulse flex space-x-4">
+                        <div class="flex-1 space-y-2 py-1">
+                            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                            <div class="h-4 bg-gray-200 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Col 2: Details -->
+        <div class="w-1/2 flex flex-col gap-6">
+            <!-- Citizen Profile -->
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+                <div class="flex items-center gap-4">
+                    <img id="citizen-avatar" src="https://api.dicebear.com/7.x/initials/svg?seed=Citizen"
+                        class="w-16 h-16 rounded-full bg-gray-200">
+                    <div>
+                        <h2 id="citizen-name" class="text-xl font-bold text-gray-800 dark:text-white">Nombre del
+                            Ciudadano</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Ciudadano</p>
+                    </div>
+                    <div class="ml-auto flex gap-2">
+                        <button class="px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition">Ver
+                            Perfil</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Greenpoint Info -->
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow flex-1 overflow-y-auto">
+                <div id="greenpoint-details">
+                    <h3 class="text-2xl font-bold text-green-700 mb-2">Título del GreenPoint</h3>
+                    <p class="text-gray-500 mb-4">Publicado hace 2 horas</p>
+
+                    <!-- Photos -->
+                    <div class="photo-grid three">
+                        <div class="photo-wrapper"><img src="https://via.placeholder.com/400" class="photo-item"></div>
+                        <div class="photo-wrapper"><img src="https://via.placeholder.com/200" class="photo-item"></div>
+                        <div class="photo-wrapper"><img src="https://via.placeholder.com/200" class="photo-item"></div>
+                    </div>
+
+                    <!-- Categories -->
+                    <div class="category-tags">
+                        <span class="category-tag bg-green-500">Plástico</span>
+                        <span class="category-tag bg-blue-500">Vidrio</span>
+                    </div>
+
+                    <p class="text-gray-700 dark:text-gray-300 mb-4">Descripción detallada del greenpoint...</p>
+
+                    <!-- Materials -->
+                    <table class="material-table text-gray-700 dark:text-gray-300">
+                        <thead>
+                            <tr>
+                                <th>Material</th>
+                                <th>Cantidad</th>
+                                <th>Descripción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Botellas</td>
+                                <td>5 kg</td>
+                                <td>Limpias y aplastadas</td>
+                            </tr>
+                            <tr>
+                                <td>Cartón</td>
+                                <td>10 kg</td>
+                                <td>Cajas desarmadas</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                        <p><strong>Ubicación:</strong> Av. Siempre Viva 123</p>
+                        <p><strong>Horario:</strong> 9:00 AM - 5:00 PM</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Col 3: Chat -->
+        <div class="w-1/4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow flex flex-col">
+            <div class="border-b pb-4 mb-4">
+                <h2 class="text-xl font-bold text-green-600">Chat</h2>
+                <p class="text-sm text-gray-500">Conversación con el ciudadano</p>
+            </div>
+            <div id="chat-messages"
+                class="flex-1 overflow-y-auto space-y-4 mb-4 p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <!-- Fake messages -->
+                <div class="flex justify-start">
+                    <div class="bg-gray-200 dark:bg-gray-700 p-2 rounded-lg max-w-[80%] text-sm">Hola, ¿sigue
+                        disponible?</div>
+                </div>
+                <div class="flex justify-end">
+                    <div class="bg-green-100 dark:bg-green-900 p-2 rounded-lg max-w-[80%] text-sm">Sí, claro.</div>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <input type="text" placeholder="Escribe un mensaje..."
+                    class="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600">
+                <button class="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700">➤</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer (copied) -->
+    <footer class="bg-[#c7bda9] text-white dark:bg-green-500 mt-8">
+        <div class="max-w-6xl mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p class="text-sm text-center md:text-left">© 2025 GreenPoints. Todos los derechos reservados.</p>
+            <nav class="flex gap-6 text-sm">
+                <a href="about.html" class="hover:underline">Acerca</a>
+                <a href="contact.html" class="hover:underline">Contacto</a>
+                <a href="privacy.html" class="hover:underline">Privacidad</a>
+            </nav>
+        </div>
+    </footer>
+
+    <script src="../js/onload.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        // Fake Data Injection
+        const fakeActive = [
+            {
+                id: 1,
+                title: 'Botellas PET',
+                date: '12/12/2024',
+                description: 'Tengo 5kg de botellas de plástico limpias y aplastadas.',
+                user: { name: 'Juan Pérez', role: 'Ciudadano' },
+                materials: [{ name: 'Botellas', qty: '5 kg', desc: 'Limpias' }],
+                categories: ['Plástico']
+            },
+            {
+                id: 2,
+                title: 'Cartón',
+                date: '13/12/2024',
+                description: 'Cajas de mudanza desarmadas.',
+                user: { name: 'Maria Lopez', role: 'Ciudadano' },
+                materials: [{ name: 'Cartón', qty: '10 kg', desc: 'Cajas' }],
+                categories: ['Papel/Cartón']
+            }
+        ];
+        const fakeFinished = [
+            {
+                id: 3,
+                title: 'Latas',
+                date: '10/11/2024',
+                description: 'Latas de aluminio de refrescos.',
+                user: { name: 'Carlos Ruiz', role: 'Ciudadano' },
+                materials: [{ name: 'Latas', qty: '2 kg', desc: 'Aluminio' }],
+                categories: ['Metal']
+            },
+            {
+                id: 4,
+                title: 'Vidrio',
+                date: '05/11/2024',
+                description: 'Botellas de vino vacías.',
+                user: { name: 'Ana Gomez', role: 'Ciudadano' },
+                materials: [{ name: 'Vidrio', qty: '8 kg', desc: 'Botellas' }],
+                categories: ['Vidrio']
+            }
+        ];
+
+        const listActive = document.getElementById('list-active');
+        const listFinished = document.getElementById('list-finished');
+
+        function renderList(container, items, isActive) {
+            container.innerHTML = '';
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-lg cursor-pointer transition ${isActive ? 'bg-green-50 hover:bg-green-100 border border-green-200' : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'}`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-gray-800">${item.title}</p>
+                            <p class="text-xs text-gray-500">${item.date}</p>
+                        </div>
+                        ${isActive ? '<span class="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">Reservado</span>' : '<span class="text-xs bg-gray-200 text-gray-800 px-2 py-1 rounded-full">Finalizado</span>'}
+                    </div>
+                `;
+                div.onclick = () => loadDetails(item);
+                container.appendChild(div);
+            });
+        }
+
+        renderList(listActive, fakeActive, true);
+        renderList(listFinished, fakeFinished, false);
+
+        function loadDetails(item) {
+            console.log('Loading details for', item.title);
+            // Update User
+            document.getElementById('citizen-name').textContent = item.user.name;
+            document.querySelector('#citizen-avatar').src = `https://api.dicebear.com/7.x/initials/svg?seed=${item.user.name}`;
+
+            // Update Details
+            const detailsContainer = document.getElementById('greenpoint-details');
+            detailsContainer.querySelector('h3').textContent = item.title;
+            detailsContainer.querySelector('p.text-gray-500').textContent = `Publicado el ${item.date}`;
+            detailsContainer.querySelector('p.text-gray-700').textContent = item.description;
+
+            // Update Categories
+            const catContainer = detailsContainer.querySelector('.category-tags');
+            catContainer.innerHTML = item.categories.map(c => `<span class="category-tag bg-green-500">${c}</span>`).join('');
+
+            // Update Materials
+            const tbody = detailsContainer.querySelector('tbody');
+            tbody.innerHTML = item.materials.map(m => `<tr><td>${m.name}</td><td>${m.qty}</td><td>${m.desc}</td></tr>`).join('');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,13 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservas</title>
     <link rel="stylesheet" href="/css/layout.css">
-    <link rel="stylesheet" href="/css/start.css">
+    <link rel="stylesheet" href="/css/book.css">
+    <title>Document</title>
 </head>
+<style>
+    main {
+        width: 100%;
+    }
+</style>
 
 <body>
     <header>
@@ -18,9 +23,7 @@
             </svg>
             GREENPOINTS TACNA
         </div>
-
         <button class="mobile-menu-btn">☰</button>
-
         <nav>
             <ul class="nav-menu">
                 <li><a href="/pages/navigation/start.html"><svg xmlns="http://www.w3.org/2000/svg" width="24"
@@ -47,26 +50,121 @@
         </nav>
     </header>
     <main>
-        <section>
-            <div class="search-container">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                    <path fill="currentColor"
-                        d="M9.5 16q-2.725 0-4.612-1.888T3 9.5t1.888-4.612T9.5 3t4.613 1.888T16 9.5t-1.887 4.612T9.5 16m9.5 4l-5.5-5.5q-.75.625-1.725.975T9.5 16q-3.35 0-5.675-2.325T1.5 8t2.325-5.675T9.5 0t5.675 2.325T17.5 8q0 1.1-.35 2.075T16.175 11.85L21.7 17.375z" />
-                </svg>
-                <input type="search" id="searchInput" placeholder="Buscar mis greenpoints..." />
-                <div class="user-notifications">
-                    <a href="/pages/navigation/profile.html">
-                        <img id="userAvatar" class="user-avatar" src="" alt="Avatar del usuario" />
-                    </a>
+        <section class="book-container">
+            <!-- Col 1: List -->
+            <div class="col-left">
+                <!-- Active -->
+                <div class="card flex-1">
+                    <h2 class="section-title">Activos (Reservados)</h2>
+                    <div id="list-active" class="list-container">
+                        <!-- Skeleton Item -->
+                        <div class="skeleton">
+                            <div class="skeleton-line short"></div>
+                            <div class="skeleton-line"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Finished -->
+                <div class="card flex-1">
+                    <h2 class="section-title">Finalizados</h2>
+                    <div id="list-finished" class="list-container">
+                        <!-- Skeleton Item -->
+                        <div class="skeleton">
+                            <div class="skeleton-line short"></div>
+                            <div class="skeleton-line"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </section>
 
-        <section>
-            <div style="display:flex; gap:16px; align-items:stretch;">
-                <div id="collectorList" style="flex:1; min-width:280px;"></div>
-                <div id="detailsPanel" style="flex:2; min-width:360px;"></div>
-                <div id="chatPanel" style="flex:1; min-width:280px;"></div>
+            <!-- Col 2: Details -->
+            <div class="col-center">
+                <!-- Citizen Profile -->
+                <div class="card">
+                    <div class="profile-header">
+                        <img id="citizen-avatar" src="https://api.dicebear.com/7.x/initials/svg?seed=Citizen"
+                            class="avatar">
+                        <div class="profile-info">
+                            <h2 id="citizen-name">Nombre del Ciudadano</h2>
+                            <p>Ciudadano</p>
+                        </div>
+                        <button class="btn-profile">Ver Perfil</button>
+                    </div>
+                </div>
+
+                <!-- Greenpoint Info -->
+                <div class="card flex-1">
+                    <div id="greenpoint-details">
+                        <h3 class="details-title">Título del GreenPoint</h3>
+                        <p class="details-meta">Publicado hace 2 horas</p>
+
+                        <!-- Photos -->
+                        <div class="photo-grid three">
+                            <div class="photo-wrapper"><img src="https://via.placeholder.com/400" class="photo-item">
+                            </div>
+                            <div class="photo-wrapper"><img src="https://via.placeholder.com/200" class="photo-item">
+                            </div>
+                            <div class="photo-wrapper"><img src="https://via.placeholder.com/200" class="photo-item">
+                            </div>
+                        </div>
+
+                        <!-- Categories -->
+                        <div class="category-tags">
+                            <span class="category-tag">Plástico</span>
+                            <span class="category-tag" style="background-color: #3b82f6;">Vidrio</span>
+                        </div>
+
+                        <p class="details-desc">Descripción detallada del greenpoint...</p>
+
+                        <!-- Materials -->
+                        <table class="material-table">
+                            <thead>
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Cantidad</th>
+                                    <th>Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Botellas</td>
+                                    <td>5 kg</td>
+                                    <td>Limpias y aplastadas</td>
+                                </tr>
+                                <tr>
+                                    <td>Cartón</td>
+                                    <td>10 kg</td>
+                                    <td>Cajas desarmadas</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="details-meta">
+                            <p><strong>Ubicación:</strong> Av. Siempre Viva 123</p>
+                            <p><strong>Horario:</strong> 9:00 AM - 5:00 PM</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Col 3: Chat -->
+            <div class="col-right">
+                <div class="card flex-1 chat-container">
+                    <div class="chat-header">
+                        <h2 class="section-title" style="margin-bottom: 4px;">Chat</h2>
+                        <p class="details-meta" style="margin: 0; font-size: 0.875rem;">Conversación con el ciudadano
+                        </p>
+                    </div>
+                    <div id="chat-messages" class="chat-messages">
+                        <!-- Fake messages -->
+                        <div class="message received">Hola, ¿sigue disponible?</div>
+                        <div class="message sent">Sí, claro.</div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" placeholder="Escribe un mensaje..." class="chat-input">
+                        <button class="btn-send">➤</button>
+                    </div>
+                </div>
             </div>
         </section>
     </main>

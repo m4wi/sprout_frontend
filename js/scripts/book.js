@@ -1,207 +1,198 @@
 const API_BASE = 'http://localhost:3000';
 
-const token = localStorage.getItem('token');
-const usuarioStr = localStorage.getItem('usuario');
-const usuario = usuarioStr ? JSON.parse(usuarioStr) : null;
+const listActive = document.getElementById('list-active');
+const listFinished = document.getElementById('list-finished');
 
-const listEl = document.getElementById('collectorList');
-const detailsEl = document.getElementById('detailsPanel');
-const chatEl = document.getElementById('chatPanel');
-const searchInput = document.getElementById('searchInput');
+function renderList(container, items, isActive) {
+    container.innerHTML = '';
+    items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'list-item';
 
-let myGreenpoints = [];
-let currentSelection = null;
+        const badgeClass = isActive ? 'badge reserved' : 'badge finished';
+        const badgeText = isActive ? 'Reservado' : 'Finalizado';
 
-async function fetchMyCollections(status) {
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const url = new URL(`${API_BASE}/greenpoints/myCollections`);
-  if (status) url.searchParams.set('status', status);
-  const res = await fetch(url, { headers });
-  if (!res.ok) throw new Error('No se pudieron cargar tus greenpoints');
-  const data = await res.json();
-  return data.greenpoints || [];
+        // Format date
+        const dateObj = new Date(item.created_at);
+        const dateStr = dateObj.toLocaleDateString();
+
+        // Icons
+        const trashIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 21q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM9 17h2V8H9zm4 0h2V8h-2zM7 6v13z"/></svg>`;
+        const closeIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z"/></svg>`;
+
+        div.innerHTML = `
+            <div class="item-header">
+                <div>
+                    <p class="item-title">${item.description || 'Sin título'}</p>
+                    <p class="item-date">${dateStr}</p>
+                </div>
+                <div class="item-actions">
+                    <span class="${badgeClass}">${badgeText}</span>
+                    <button class="action-btn" title="${isActive ? 'Cancelar Reserva' : 'Eliminar'}">
+                        ${isActive ? trashIcon : closeIcon}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        const btn = div.querySelector('.action-btn');
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            if (isActive) {
+                // Handle Trash (Cancel Reservation)
+                if (confirm('¿Estás seguro de cancelar esta reserva?')) {
+                    // Ideally call API to cancel
+                    console.log('Cancelling reservation for greenpoint:', item.id_greenpoint);
+                    // For now, just remove from UI to simulate
+                    div.remove();
+                }
+            } else {
+                // Handle X (Remove from list)
+                if (confirm('¿Eliminar de la lista?')) {
+                    div.remove();
+                }
+            }
+        };
+
+        div.onclick = () => {
+            document.querySelectorAll('.list-item').forEach(el => el.classList.remove('active-item'));
+            div.classList.add('active-item');
+            loadDetails(item);
+        };
+        container.appendChild(div);
+    });
 }
 
-async function fetchGreenpoint(id) {
-  const res = await fetch(`${API_BASE}/greenpoints/${id}`);
-  if (!res.ok) throw new Error('No se pudo cargar el greenpoint');
-  return await res.json();
-}
+async function loadDetails(basicItem) {
+    console.log('Loading details for', basicItem.id_greenpoint);
 
-async function fetchMaterials(id) {
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const res = await fetch(`${API_BASE}/greenpoints/${id}/materials`, { headers });
-  if (!res.ok) return { materials: [] };
-  return await res.json();
-}
+    // Show loading or skeleton if needed
+    // For now, we just fetch
 
-async function fetchCategories(id) {
-  const res = await fetch(`${API_BASE}/greenpoints/${id}/categories`);
-  if (!res.ok) return [];
-  return await res.json();
-}
-
-async function fetchChat(id) {
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const res = await fetch(`${API_BASE}/greenpoints/${id}/chat`, { headers });
-  if (!res.ok) return null;
-  return await res.json();
-}
-
-async function sendChatMessage(greenpointId, content) {
-  const headers = token ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } : { 'Content-Type': 'application/json' };
-  const res = await fetch(`${API_BASE}/greenpoints/${greenpointId}/chat/message`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ content })
-  });
-  if (!res.ok) return null;
-  return await res.json();
-}
-
-function renderList(items) {
-  const q = (searchInput?.value || '').toLowerCase();
-  const filtered = items.filter(gp => (gp.description || '').toLowerCase().includes(q));
-
-  listEl.innerHTML = '';
-  const container = document.createElement('div');
-  container.className = 'results-container';
-
-  filtered.forEach(gp => {
-    const card = document.createElement('div');
-    card.className = 'result-card';
-    card.style.cursor = 'pointer';
-    card.innerHTML = `
-      <div>
-        <p class="result-title">${gp.description || 'Sin descripción'}</p>
-        <p class="result-subtitle">Estado: ${gp.status || 'N/A'}</p>
-        <p class="result-subtitle">${gp.direction || ''}</p>
-      </div>
-    `;
-    card.addEventListener('click', () => selectGreenpoint(gp.id_greenpoint));
-    container.appendChild(card);
-  });
-
-  listEl.appendChild(container);
-}
-
-function renderDetails(gp, materials, categories, citizen) {
-  const mats = (materials?.materials || []).map(m => `${m.quantity} ${m.unit || ''} ${m.description || ''}`.trim());
-  const cats = (categories || []).map(c => c.name);
-
-  detailsEl.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <img class="avatar" src="${citizen?.avatar_url ? citizen.avatar_url : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (citizen?.username || 'user')}" />
-        <div>
-          <div class="username">${citizen ? `${citizen.name || ''} ${citizen.lastname || ''}`.trim() || (citizen.username || 'usuario') : 'usuario'}</div>
-          <div class="subtitle">${new Date(gp.created_at).toLocaleString()}</div>
-        </div>
-      </div>
-      <div class="card-body">
-        <p>${gp.description || ''}</p>
-        <div class="details">
-          <div><strong>Dirección:</strong> ${gp.direction || 'Sin dirección'}</div>
-          <div><strong>Horario:</strong> ${gp.hour || 'Sin horario'}</div>
-          <div><strong>Materiales:</strong> ${mats.length ? mats.join(', ') : 'Sin materiales'}</div>
-          <div><strong>Categorías:</strong> ${cats.length ? cats.join(', ') : 'Sin categorías'}</div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderChat(chat, greenpointId) {
-  chatEl.innerHTML = '';
-  const box = document.createElement('div');
-  box.className = 'chat-box';
-
-  const header = document.createElement('div');
-  header.className = 'chat-header';
-  header.textContent = 'Chat del GreenPoint';
-  box.appendChild(header);
-
-  const msgs = document.createElement('div');
-  msgs.className = 'chat-messages';
-  (chat?.messages || []).forEach(m => {
-    const bubble = document.createElement('div');
-    bubble.className = m.sender_id === (usuario?.id_user || usuario?.id) ? 'msg msg-out' : 'msg msg-in';
-    bubble.textContent = m.content;
-    msgs.appendChild(bubble);
-  });
-  box.appendChild(msgs);
-
-  const form = document.createElement('div');
-  form.className = 'chat-input';
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.placeholder = 'Escribe un mensaje...';
-  const btn = document.createElement('button');
-  btn.textContent = 'Enviar';
-  btn.disabled = !token;
-  btn.addEventListener('click', async () => {
-    const content = input.value.trim();
-    if (!content) return;
-    btn.disabled = true;
-    const created = await sendChatMessage(greenpointId, content);
-    if (created) {
-      const bubble = document.createElement('div');
-      bubble.className = 'msg msg-out';
-      bubble.textContent = created.content;
-      msgs.appendChild(bubble);
-      input.value = '';
-      msgs.scrollTop = msgs.scrollHeight;
-    }
-    btn.disabled = false;
-  });
-  form.appendChild(input);
-  form.appendChild(btn);
-  box.appendChild(form);
-
-  chatEl.appendChild(box);
-}
-
-async function selectGreenpoint(id) {
-  currentSelection = id;
-  try {
-    const [gp, mats, cats] = await Promise.all([
-      fetchGreenpoint(id),
-      fetchMaterials(id),
-      fetchCategories(id)
-    ]);
-
-    // Obtener datos del ciudadano/publicador
-    let citizen = null;
     try {
-      if (gp?.id_citizen) {
-        const r = await fetch(`${API_BASE}/users/${gp.id_citizen}`);
-        if (r.ok) citizen = await r.json();
-      }
-    } catch {}
+        const res = await fetch(`${API_BASE}/greenpoints/fulldata/${basicItem.id_greenpoint}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
 
-    renderDetails(gp, mats, cats, citizen);
+        if (!res.ok) {
+            console.error('Error loading details');
+            return;
+        }
 
-    const chat = await fetchChat(id);
-    renderChat(chat, id);
-  } catch (e) {
-    detailsEl.innerHTML = '<p class="error-msg">No se pudo cargar los detalles.</p>';
-    chatEl.innerHTML = '<p class="error-msg">No se pudo cargar el chat.</p>';
-  }
+        const item = await res.json();
+
+        // Update User
+        // The full data might have user info. If not, we might need another fetch or use what we have.
+        // Assuming fulldata returns { ..., user: { name, ... }, materials: [], categories: [] }
+        // Based on posts.js, it seems to return a structure. Let's adapt.
+
+        // If the API doesn't return nested user object, we might need to fetch user. 
+        // But let's try to map what we can.
+
+        const citizenName = document.getElementById('citizen-name');
+        // Fallback if user data is missing in fulldata response
+        const userName = item.user?.name || item.username || 'Usuario';
+        if (citizenName) citizenName.textContent = userName;
+
+        const citizenAvatar = document.querySelector('#citizen-avatar');
+        if (citizenAvatar) {
+            const avatarUrl = item.user?.avatar_url || item.avatar_url;
+            citizenAvatar.src = avatarUrl ? `${API_BASE}/profile_photo/${avatarUrl}.webp` : `https://api.dicebear.com/7.x/initials/svg?seed=${userName}`;
+        }
+
+        // Update Details
+        const detailsContainer = document.getElementById('greenpoint-details');
+        if (!detailsContainer) return;
+
+        detailsContainer.querySelector('.details-title').textContent = item.description || basicItem.description;
+        detailsContainer.querySelector('.details-meta').textContent = `Publicado el ${new Date(item.created_at).toLocaleDateString()}`;
+        detailsContainer.querySelector('.details-desc').textContent = item.description || ''; // Description might be same as title in this DB design?
+
+        // Update Categories
+        const catContainer = detailsContainer.querySelector('.category-tags');
+        if (catContainer) {
+            const cats = item.categories || [];
+            catContainer.innerHTML = cats.map(c => `<span class="category-tag" style="background-color:${c.color || '#22c55e'}">${c.name}</span>`).join('');
+        }
+
+        // Update Materials
+        const tbody = detailsContainer.querySelector('tbody');
+        if (tbody) {
+            const mats = item.materials || [];
+            tbody.innerHTML = mats.map(m => `<tr><td>${m.name || m.description}</td><td>${m.quantity} ${m.unit}</td><td>${m.description || '-'}</td></tr>`).join('');
+        }
+
+        // Photos
+        const photoGrid = detailsContainer.querySelector('.photo-grid');
+        if (photoGrid) {
+            const photos = item.photos || [];
+            photoGrid.className = `photo-grid ${photos.length === 1 ? 'one' : photos.length === 2 ? 'two' : 'three'}`;
+            photoGrid.innerHTML = '';
+
+            const displayCount = Math.min(photos.length, 3);
+            for (let i = 0; i < displayCount; i++) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'photo-wrapper';
+                const img = document.createElement('img');
+                img.className = 'photo-item';
+                img.src = photos[i].url.startsWith('http') ? photos[i].url : `${API_BASE}/greenpoint_photo/${photos[i].url}.webp`;
+                wrapper.appendChild(img);
+
+                if (i === 2 && photos.length > 3) {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'more-overlay';
+                    overlay.textContent = `+${photos.length - 3}`;
+                    wrapper.appendChild(overlay);
+                }
+                photoGrid.appendChild(wrapper);
+            }
+        }
+
+    } catch (err) {
+        console.error('Error fetching full details:', err);
+    }
 }
 
-async function init() {
-  try {
-    myGreenpoints = await fetchMyCollections();
-    renderList(myGreenpoints);
-  } catch (e) {
-    listEl.innerHTML = '<p class="error-msg">Error al cargar tus greenpoints.</p>';
-  }
+async function getMyBookings() {
+    try {
+        const res = await fetch(`${API_BASE}/api/reserved-greenpoints`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        if (!res.ok) throw new Error('Failed to fetch bookings');
+        return await res.json();
+    } catch (error) {
+        console.error(error);
+        return [];
+    }
 }
 
-searchInput?.addEventListener('input', () => renderList(myGreenpoints));
+(async () => {
+    const books = await getMyBookings();
+    console.log('Bookings:', books);
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
+    // Filter by status
+    const active = books.filter(b => b.status === 'reserved');
+    const finished = books.filter(b => b.status === 'terminated');
+
+    if (listActive) renderList(listActive, active, true);
+    if (listFinished) renderList(listFinished, finished, false);
+
+    // Load first item if exists
+    if (active.length > 0) {
+        loadDetails(active[0]);
+        setTimeout(() => {
+            const first = listActive.querySelector('.list-item');
+            if (first) first.classList.add('active-item');
+        }, 0);
+    } else if (finished.length > 0) {
+        loadDetails(finished[0]);
+        setTimeout(() => {
+            const first = listFinished.querySelector('.list-item');
+            if (first) first.classList.add('active-item');
+        }, 0);
+    }
+})();

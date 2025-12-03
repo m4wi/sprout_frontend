@@ -8,6 +8,11 @@
     <link rel="stylesheet" href="/css/posts.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <title>Document</title>
 </head>
 
@@ -75,32 +80,61 @@
                     <button id="chatSendBtn">Enviar</button>
                 </div>
             </div>
-            <!-- Modal for Materials -->
-            <div id="materialModal" class="modal" style="display:none;">
-                <div class="modal-content">
-                    <span class="close-modal">&times;</span>
-                    <h3>Agregar Material</h3>
-                    <div class="form-group">
-                        <label>Cantidad</label>
-                        <input type="number" id="matQuantity" step="0.001" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Unidad</label>
-                        <select id="matUnit" style="padding: 0.75rem; border-radius: 12px; border: 2px solid #e8f5e9;">
-                            <option value="kg">Kg</option>
-                            <option value="unit">Unidad</option>
-                            <option value="lt">Litros</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Descripción</label>
-                        <input type="text" id="matDescription" placeholder="Detalles del material">
-                    </div>
-                    <button type="button" id="btnSaveMaterial" class="primary-btn">Guardar Material</button>
-                </div>
-            </div>
         </section>
     </main>
+
+    <!-- Modal for Materials -->
+    <div id="materialModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Agregar Material</h3>
+            <div class="form-group">
+                <label>Cantidad</label>
+                <input type="number" id="matQuantity" step="0.001" required>
+            </div>
+            <div class="form-group">
+                <label>Unidad</label>
+                <select id="matUnit" style="padding: 0.75rem; border-radius: 12px; border: 2px solid #e8f5e9;">
+                    <option value="kg">Kg</option>
+                    <option value="unit">Unidad</option>
+                    <option value="lt">Litros</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <input type="text" id="matDescription" placeholder="Detalles del material">
+            </div>
+            <button type="button" id="btnSaveMaterial" class="primary-btn">Guardar Material</button>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal" id="closeReportModal">&times;</span>
+            <h3>Reportar Publicación</h3>
+            <form id="reportForm">
+                <input type="hidden" id="reportGreenpointId">
+                <div class="form-group">
+                    <label for="reportType">Tipo de Problema</label>
+                    <select id="reportType" required
+                        style="padding: 0.75rem; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.5);">
+                        <option value="spam">Spam</option>
+                        <option value="inappropriate">Contenido Inapropiado</option>
+                        <option value="fake">Información Falsa</option>
+                        <option value="other">Otro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reportMessage">Descripción</label>
+                    <textarea id="reportMessage" rows="4" placeholder="Describe el problema..." required
+                        style="padding: 0.75rem; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.5); resize: vertical; font-family: inherit;"></textarea>
+                </div>
+                <button type="submit" class="submit-btn" style="background: #ef4444; color: white;">Enviar
+                    Reporte</button>
+            </form>
+        </div>
+    </div>
 
     <!-- Map Modal -->
     <div id="mapModal" class="modal-overlay" style="display: none;">

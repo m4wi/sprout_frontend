@@ -1,6 +1,5 @@
 :root {
-    --dark-green: #3D641F;
-
+    --dark-green: #223b0e;
     --unselected-button: #65AD2D;
     --selected-button: #477424;
     --foreground-button: #ededed;
@@ -19,8 +18,11 @@ header {
     width: 100%;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 0;
+    padding: 0 2rem;
     background-color: var(--dark-green);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 100;
 }
 
 .logo {
@@ -30,7 +32,8 @@ header {
     font-weight: bold;
     font-size: 1.2rem;
     color: var(--foreground-button);
-    margin-left: 2rem;
+    margin-left: 0;
+    /* Removed margin-left as padding is now on header */
 }
 
 .logo svg {
@@ -43,7 +46,10 @@ header {
     display: flex;
     list-style: none;
     gap: 1rem;
-    margin-right: 2rem;
+    margin-right: 0;
+    flex-wrap: nowrap;
+    /* Prevent wrapping */
+    /* Removed margin-right as padding is now on header */
 }
 
 .nav-menu a {
@@ -158,4 +164,9 @@ body {
     flex-direction: column;
     width: 100%;
     align-items: center;
+}
+
+#header-container {
+    width: 100%;
+    z-index: 100;
 }

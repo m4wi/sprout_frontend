@@ -129,8 +129,10 @@ const renderGreenPoints = (greenpoints) => {
         item.className = 'greenpoint-item';
         item.innerHTML = `
             <h3>${gp.description}</h3>
-            <p>Categorías: ${gp.categories?.map(cat => cat.name).join(', ') || 'Sin categorías'}</p>
-            <p>Horario: ${gp.hour || 'Sin descripción'}</p>
+            <p><strong>Horario:</strong> ${gp.hour || 'Sin descripción'}</p>
+            <div class="categories">
+                ${(gp.categories || []).map(cat => `<span class="category-tag">${cat.name}</span>`).join('') || '<span class="category-tag">Sin categorías</span>'}
+            </div>
         `;
         list.appendChild(item);
         drawMarker(mapInstance, gp, filteredCategoryPopup(gp));
@@ -612,6 +614,69 @@ const init = () => {
         }
     }
 
+    // --- Image Preview Logic ---
+    const gpImagesInput = document.getElementById('gpImages');
+    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+    let selectedImages = []; // Array to store all selected images
+
+    if (gpImagesInput && imagePreviewContainer) {
+        gpImagesInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+
+            files.forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    selectedImages.push(file);
+                }
+            });
+
+            renderImagePreviews();
+            // Reset input so the same file can be selected again if needed (though unlikely)
+            gpImagesInput.value = '';
+        });
+    }
+
+    function renderImagePreviews() {
+        if (!imagePreviewContainer) return;
+        imagePreviewContainer.innerHTML = '';
+
+        selectedImages.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const wrapper = document.createElement('div');
+                wrapper.style.position = 'relative';
+                wrapper.style.display = 'inline-block';
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'preview-img';
+
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = '&times;';
+                removeBtn.style.position = 'absolute';
+                removeBtn.style.top = '-5px';
+                removeBtn.style.right = '-5px';
+                removeBtn.style.background = 'red';
+                removeBtn.style.color = 'white';
+                removeBtn.style.border = 'none';
+                removeBtn.style.borderRadius = '50%';
+                removeBtn.style.width = '20px';
+                removeBtn.style.height = '20px';
+                removeBtn.style.cursor = 'pointer';
+                removeBtn.style.fontSize = '14px';
+                removeBtn.style.lineHeight = '1';
+                removeBtn.onclick = () => {
+                    selectedImages.splice(index, 1);
+                    renderImagePreviews();
+                };
+
+                wrapper.appendChild(img);
+                wrapper.appendChild(removeBtn);
+                imagePreviewContainer.appendChild(wrapper);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
     // --- Manejo de Materiales (Modal) ---
     const materialModal = document.getElementById('materialModal');
     const btnAddMaterial = document.getElementById('btnAddMaterial');
@@ -780,9 +845,9 @@ const init = () => {
                 }
 
                 // 4. Subir Imágenes
-                if (imagesInput.files.length > 0) {
+                if (selectedImages.length > 0) {
                     submitBtn.textContent = 'Subiendo imágenes...';
-                    for (const file of imagesInput.files) {
+                    for (const file of selectedImages) {
                         const formData = new FormData();
                         formData.append('photo', file);
 
@@ -801,7 +866,9 @@ const init = () => {
                 // Resetear todo
                 addForm.reset();
                 materials = [];
+                selectedImages = []; // Clear images
                 renderMaterialsList();
+                renderImagePreviews(); // Clear previews
                 coordsInput.value = '';
                 if (tempMarker) {
                     map.removeLayer(tempMarker);
