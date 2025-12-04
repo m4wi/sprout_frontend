@@ -1,3 +1,31 @@
+@font-face {
+    font-family: 'Motor';
+    src: url('/assets/fonts/motor-regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Motor';
+    src: url('/assets/fonts/motor-bold.woff2') format('woff2');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Poppins';
+    src: url('/assets/fonts/Poppins-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Poppins';
+    src: url('/assets/fonts/Poppins-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
 :root {
     --dark-green: #223b0e;
     --unselected-button: #65AD2D;
@@ -10,6 +38,17 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.logo {
+    font-family: 'Motor', sans-serif;
 }
 
 header {
@@ -33,7 +72,6 @@ header {
     font-size: 1.2rem;
     color: var(--foreground-button);
     margin-left: 0;
-    /* Removed margin-left as padding is now on header */
 }
 
 .logo svg {
@@ -48,8 +86,6 @@ header {
     gap: 1rem;
     margin-right: 0;
     flex-wrap: nowrap;
-    /* Prevent wrapping */
-    /* Removed margin-right as padding is now on header */
 }
 
 .nav-menu a {

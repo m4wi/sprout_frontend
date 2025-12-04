@@ -63,11 +63,173 @@ function renderList(container, items, isActive) {
     });
 }
 
+let socket;
+let currentGreenpointId = null;
+let currentUser = null;
+
+// Initialize Socket
+function initSocket() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // Decode user info from token (simple decode)
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        currentUser = payload;
+    } catch (e) {
+        console.error('Error decoding token', e);
+    }
+
+    socket = io(API_BASE, {
+        auth: { token }
+    });
+
+    socket.on('connect', () => {
+        console.log('Connected to chat server');
+        if (currentGreenpointId) {
+            socket.emit('join_room', { greenpoint_id: currentGreenpointId });
+        }
+    });
+
+    socket.on('new_message', (msg) => {
+        // Only append if it belongs to the current chat
+        // (Though room logic handles this, extra safety or UI update)
+        appendMessage(msg);
+    });
+
+    socket.on('error', (err) => {
+        console.error('Socket error:', err);
+    });
+}
+
+// Chat UI Functions
+const chatMessages = document.getElementById('chat-messages');
+const chatInput = document.querySelector('.chat-input');
+const sendBtn = document.querySelector('.btn-send');
+
+function appendMessage(msg) {
+    if (!chatMessages) return;
+
+    const div = document.createElement('div');
+    const isMe = msg.sender_id === currentUser.id;
+    div.className = `message ${isMe ? 'sent' : 'received'}`;
+    div.textContent = msg.content;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+async function loadChatHistory(greenpointId) {
+    if (!chatMessages) return;
+    chatMessages.innerHTML = '<div style="text-align:center; color:#888;">Cargando chat...</div>';
+
+    try {
+        const res = await fetch(`${API_BASE}/greenpoints/${greenpointId}/chat`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (!res.ok) {
+            if (res.status === 404) {
+                chatMessages.innerHTML = '<div style="text-align:center; color:#888;">Inicio del chat</div>';
+                return;
+            }
+            throw new Error('Error loading chat');
+        }
+
+        const data = await res.json();
+        const messages = data.messages || [];
+
+        chatMessages.innerHTML = '';
+        if (messages.length === 0) {
+            chatMessages.innerHTML = '<div style="text-align:center; color:#888;">No hay mensajes aún.</div>';
+        } else {
+            messages.forEach(msg => appendMessage(msg));
+        }
+    } catch (err) {
+        console.error(err);
+        chatMessages.innerHTML = '<div style="text-align:center; color:red;">Error al cargar mensajes.</div>';
+    }
+}
+
+// Send Message Logic
+function sendMessage() {
+    const content = chatInput.value.trim();
+    if (!content || !currentGreenpointId || !socket) return;
+
+    socket.emit('send_message', {
+        greenpoint_id: currentGreenpointId,
+        content
+    });
+
+    chatInput.value = '';
+}
+
+if (sendBtn) {
+    sendBtn.onclick = sendMessage;
+}
+if (chatInput) {
+    chatInput.onkeypress = (e) => {
+        if (e.key === 'Enter') sendMessage();
+    };
+}
+
+
+// --- Existing Logic Updated ---
+
+let currentCitizenData = null;
+
+// Modal Elements
+const modal = document.getElementById('profile-modal');
+const modalCloseBtn = document.querySelector('.modal-close');
+const btnProfile = document.querySelector('.btn-profile');
+
+// Modal Functions
+function openProfileModal() {
+    if (!currentCitizenData || !modal) return;
+
+    // Populate Modal
+    document.getElementById('modal-avatar').src = currentCitizenData.avatar_url
+        ? `${API_BASE}/profile_photo/${currentCitizenData.avatar_url}.webp`
+        : `https://api.dicebear.com/7.x/initials/svg?seed=${currentCitizenData.username}`;
+
+    document.getElementById('modal-name').textContent = `${currentCitizenData.name} ${currentCitizenData.lastname}`;
+    document.getElementById('modal-username').textContent = `@${currentCitizenData.username}`;
+    document.getElementById('modal-email').textContent = currentCitizenData.email || 'No especificado';
+    document.getElementById('modal-phone').textContent = currentCitizenData.phone || 'No especificado';
+    document.getElementById('modal-address').textContent = currentCitizenData.direction || 'No especificado';
+    document.getElementById('modal-type').textContent = currentCitizenData.user_type || 'Ciudadano';
+    document.getElementById('modal-desc').textContent = currentCitizenData.profile_description || 'Sin descripción';
+
+    // Show Modal
+    modal.classList.add('active');
+}
+
+function closeProfileModal() {
+    if (modal) modal.classList.remove('active');
+}
+
+// Event Listeners
+if (btnProfile) btnProfile.onclick = openProfileModal;
+if (modalCloseBtn) modalCloseBtn.onclick = closeProfileModal;
+if (modal) {
+    modal.onclick = (e) => {
+        if (e.target === modal) closeProfileModal();
+    };
+}
+
+// --- Existing Logic Updated ---
+
 async function loadDetails(basicItem) {
     console.log('Loading details for', basicItem.id_greenpoint);
+    currentGreenpointId = basicItem.id_greenpoint;
+    currentCitizenData = null; // Reset current data
 
-    // Show loading or skeleton if needed
-    // For now, we just fetch
+    // Join Socket Room
+    if (socket && socket.connected) {
+        socket.emit('join_room', { greenpoint_id: currentGreenpointId });
+    }
+
+    // Load Chat History
+    loadChatHistory(currentGreenpointId);
 
     try {
         const res = await fetch(`${API_BASE}/greenpoints/fulldata/${basicItem.id_greenpoint}`, {
@@ -81,22 +243,29 @@ async function loadDetails(basicItem) {
 
         const item = await res.json();
 
-        // Update User
-        // The full data might have user info. If not, we might need another fetch or use what we have.
-        // Assuming fulldata returns { ..., user: { name, ... }, materials: [], categories: [] }
-        // Based on posts.js, it seems to return a structure. Let's adapt.
+        let userName = 'Usuario';
+        let avatarUrl = null;
+        const citizenId = item.id_citizen || basicItem.id_citizen;
 
-        // If the API doesn't return nested user object, we might need to fetch user. 
-        // But let's try to map what we can.
+        if (citizenId) {
+            try {
+                const userRes = await fetch(`${API_BASE}/users/${citizenId}`);
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    currentCitizenData = userData; // Store for modal
+                    userName = `${userData.name} ${userData.lastname}`;
+                    avatarUrl = userData.avatar_url;
+                }
+            } catch (uErr) {
+                console.error('Error fetching citizen:', uErr);
+            }
+        }
 
         const citizenName = document.getElementById('citizen-name');
-        // Fallback if user data is missing in fulldata response
-        const userName = item.user?.name || item.username || 'Usuario';
         if (citizenName) citizenName.textContent = userName;
 
         const citizenAvatar = document.querySelector('#citizen-avatar');
         if (citizenAvatar) {
-            const avatarUrl = item.user?.avatar_url || item.avatar_url;
             citizenAvatar.src = avatarUrl ? `${API_BASE}/profile_photo/${avatarUrl}.webp` : `https://api.dicebear.com/7.x/initials/svg?seed=${userName}`;
         }
 
@@ -106,7 +275,7 @@ async function loadDetails(basicItem) {
 
         detailsContainer.querySelector('.details-title').textContent = item.description || basicItem.description;
         detailsContainer.querySelector('.details-meta').textContent = `Publicado el ${new Date(item.created_at).toLocaleDateString()}`;
-        detailsContainer.querySelector('.details-desc').textContent = item.description || ''; // Description might be same as title in this DB design?
+        detailsContainer.querySelector('.details-desc').textContent = item.description || '';
 
         // Update Categories
         const catContainer = detailsContainer.querySelector('.category-tags');
@@ -135,7 +304,7 @@ async function loadDetails(basicItem) {
                 wrapper.className = 'photo-wrapper';
                 const img = document.createElement('img');
                 img.className = 'photo-item';
-                img.src = photos[i].url.startsWith('http') ? photos[i].url : `${API_BASE}/greenpoint_photo/${photos[i].url}.webp`;
+                img.src = photos[i].url.startsWith('http') ? photos[i].url : `${API_BASE}/greenpoint_photo/${photos[i].url}`;
                 wrapper.appendChild(img);
 
                 if (i === 2 && photos.length > 3) {
@@ -171,6 +340,8 @@ async function getMyBookings() {
 }
 
 (async () => {
+    initSocket(); // Init socket on load
+
     const books = await getMyBookings();
     console.log('Bookings:', books);
 

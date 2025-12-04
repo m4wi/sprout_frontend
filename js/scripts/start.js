@@ -846,19 +846,35 @@ const init = () => {
 
                 // 4. Subir Imágenes
                 if (selectedImages.length > 0) {
+                    console.log('Iniciando subida de imágenes:', selectedImages.length);
                     submitBtn.textContent = 'Subiendo imágenes...';
                     for (const file of selectedImages) {
+                        console.log('Subiendo archivo:', file.name);
                         const formData = new FormData();
                         formData.append('photo', file);
 
-                        await fetch(`http://localhost:3000/greenpoints/${gpId}/photos`, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': headers['Authorization']
-                            },
-                            body: formData
-                        });
+                        try {
+                            const res = await fetch(`http://localhost:3000/greenpoints/${gpId}/photos`, {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': headers['Authorization']
+                                    // NO Content-Type here, let browser set multipart/form-data boundary
+                                },
+                                body: formData
+                            });
+                            console.log('Respuesta subida imagen:', res.status);
+                            if (!res.ok) {
+                                const errText = await res.text();
+                                console.error('Error subiendo imagen:', errText);
+                                alert(`Error al subir imagen ${file.name}: ${errText}`);
+                            }
+                        } catch (err) {
+                            console.error('Error de red al subir imagen:', err);
+                            alert(`Error de red al subir imagen ${file.name}`);
+                        }
                     }
+                } else {
+                    console.log('No hay imágenes seleccionadas para subir.');
                 }
 
                 alert('¡GreenPoint registrado exitosamente con todos los detalles!');

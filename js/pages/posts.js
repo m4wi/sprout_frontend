@@ -32,6 +32,85 @@ const getAuthHeaders = () => {
 };
 
 
+// Socket & Chat Helpers
+let socket;
+
+function initSocket() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    if (typeof io !== 'undefined') {
+        socket = io(API_BASE, {
+            auth: { token }
+        });
+
+        socket.on('connect', () => {
+            console.log('Connected to chat server');
+            if (activeChat && activeChat.greenpointId) {
+                socket.emit('join_room', { greenpoint_id: activeChat.greenpointId });
+            }
+        });
+
+        socket.on('new_message', (msg) => {
+            // Only append if it belongs to the current chat
+            // We can check room or just append if activeChat matches
+            if (activeChat && activeChat.greenpointId) {
+                appendMessage(msg);
+            }
+        });
+
+        socket.on('error', (err) => {
+            console.error('Socket error:', err);
+        });
+    }
+}
+
+function appendMessage(msg) {
+    if (!chatMessages) return;
+
+    const div = document.createElement('div');
+    // Check sender. msg.sender_id vs currentUser.id (or id_user)
+    const myId = currentUser.id || currentUser.id_user;
+    const isMe = msg.sender_id === myId;
+
+    div.className = `msg ${isMe ? 'msg-out' : 'msg-in'}`;
+    div.textContent = msg.content;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+async function loadChatHistory(greenpointId) {
+    if (!chatMessages) return;
+    chatMessages.innerHTML = '<div style="text-align:center; color:#888;">Cargando chat...</div>';
+
+    try {
+        const res = await fetch(`${API_BASE}/greenpoints/${greenpointId}/chat`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (!res.ok) {
+            if (res.status === 404) {
+                chatMessages.innerHTML = '<div style="text-align:center; color:#888;">Inicio del chat</div>';
+                return;
+            }
+            throw new Error('Error loading chat');
+        }
+
+        const data = await res.json();
+        const messages = data.messages || [];
+
+        chatMessages.innerHTML = '';
+        if (messages.length === 0) {
+            chatMessages.innerHTML = '<div style="text-align:center; color:#888;">No hay mensajes aún.</div>';
+        } else {
+            messages.forEach(msg => appendMessage(msg));
+        }
+    } catch (err) {
+        console.error(err);
+        chatMessages.innerHTML = '<div style="text-align:center; color:red;">Error al cargar mensajes.</div>';
+    }
+}
+
 // Inject CSS for new features
 const style = document.createElement('style');
 style.textContent = `
@@ -294,7 +373,7 @@ function openCarousel(photos, startIndex = 0) {
 
     const img = document.createElement('img');
     img.className = 'carousel-img';
-    img.src = photos[currentIndex].url.startsWith('http') ? photos[currentIndex].url : `${API_BASE}/greenpoint_photo/${photos[currentIndex].url}.webp`;
+    img.src = photos[currentIndex].url.startsWith('http') ? photos[currentIndex].url : `${API_BASE}/greenpoint_photo/${photos[currentIndex].url}`;
 
     const closeBtn = document.createElement('div');
     closeBtn.className = 'carousel-close';
@@ -307,7 +386,7 @@ function openCarousel(photos, startIndex = 0) {
     prevBtn.onclick = (e) => {
         e.stopPropagation();
         currentIndex = (currentIndex - 1 + photos.length) % photos.length;
-        img.src = photos[currentIndex].url.startsWith('http') ? photos[currentIndex].url : `${API_BASE}/greenpoint_photo/${photos[currentIndex].url}.webp`;
+        img.src = photos[currentIndex].url.startsWith('http') ? photos[currentIndex].url : `${API_BASE}/greenpoint_photo/${photos[currentIndex].url}`;
     };
 
     const nextBtn = document.createElement('div');
@@ -316,7 +395,7 @@ function openCarousel(photos, startIndex = 0) {
     nextBtn.onclick = (e) => {
         e.stopPropagation();
         currentIndex = (currentIndex + 1) % photos.length;
-        img.src = photos[currentIndex].url.startsWith('http') ? photos[currentIndex].url : `${API_BASE}/greenpoint_photo/${photos[currentIndex].url}.webp`;
+        img.src = photos[currentIndex].url.startsWith('http') ? photos[currentIndex].url : `${API_BASE}/greenpoint_photo/${photos[currentIndex].url}`;
     };
 
     modal.appendChild(closeBtn);
@@ -421,6 +500,40 @@ async function renderMyPosts(page = 1) {
             };
 
             headerActions.appendChild(viewResBtn);
+
+            // Chat Button (Only if reserved)
+            if (gp.status === 'reserved') {
+                const chatBtn = document.createElement('button');
+                chatBtn.className = 'header-action-btn';
+                chatBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>';
+                chatBtn.title = 'Ir al Chat';
+                chatBtn.onclick = () => {
+                    // Restore chat UI if hidden
+                    restoreChatUI();
+                    const restoredChat = document.getElementById('chatContainer');
+                    if (restoredChat) restoredChat.style.display = '';
+
+                    // Start chat with this greenpoint
+                    // We need to pass a user object, but for 'my posts', the other user is the collector.
+                    // We might not have collector info here directly if 'gp' doesn't include it.
+                    // But startChat usually expects a user object to display name/avatar.
+                    // Let's check if 'gp' has collector info or if we need to fetch it.
+                    // Assuming startChat handles it or we pass a placeholder.
+                    // Actually, startChat expects (user).
+                    // If we are the owner, we want to chat with the collector.
+                    // Let's try to pass a constructed object or fetch details.
+
+                    // Quick fix: Pass a dummy object or try to use what we have.
+                    // Ideally, we should fetch the reservation to get the collector.
+                    // But for now, let's just open the chat window and load history.
+
+                    // We can reuse startChat logic but we need the other user's info for the header.
+                    // Let's fetch the reservation details first to get the collector.
+                    fetchReservationAndStartChat(gp.id_greenpoint);
+                };
+                headerActions.appendChild(chatBtn);
+            }
+
             headerActions.appendChild(editBtn);
             headerActions.appendChild(deleteBtn);
 
@@ -441,7 +554,7 @@ async function renderMyPosts(page = 1) {
                     wrapper.className = 'photo-wrapper';
                     const img = document.createElement('img');
                     img.className = 'photo-item';
-                    img.src = photos[i].url.startsWith('http') ? photos[i].url : `${API_BASE}/greenpoint_photo/${photos[i].url}.webp`;
+                    img.src = photos[i].url.startsWith('http') ? photos[i].url : `${API_BASE}/greenpoint_photo/${photos[i].url}`;
 
                     wrapper.appendChild(img);
 
@@ -767,7 +880,7 @@ async function renderFeed(page = 1) {
                     wrapper.className = 'photo-wrapper';
                     const img = document.createElement('img');
                     img.className = 'photo-item';
-                    img.src = photos[i].url.startsWith('http') ? photos[i].url : `${API_BASE}/greenpoint_photo/${photos[i].url}.webp`;
+                    img.src = photos[i].url.startsWith('http') ? photos[i].url : `${API_BASE}/greenpoint_photo/${photos[i].url}`;
 
                     wrapper.appendChild(img);
 
@@ -897,26 +1010,11 @@ async function renderFeed(page = 1) {
             chatBtn.className = 'chat-btn';
             chatBtn.textContent = 'Chat';
             chatBtn.addEventListener('click', () => {
-                activeChat = { user, greenpoint: gp };
-
                 // Ensure UI is restored if missing
                 restoreChatUI();
 
-                const currentChatAvatar = document.getElementById('chatAvatar');
-                const currentChatUsername = document.getElementById('chatUsername');
-                const currentChatSubtitle = document.getElementById('chatSubtitle');
-                const currentChatMessages = document.getElementById('chatMessages');
-
-                if (currentChatAvatar) {
-                    currentChatAvatar.src = avatar.src;
-                    currentChatAvatar.style.display = 'block';
-                }
-                if (currentChatUsername) currentChatUsername.textContent = uname.textContent;
-                if (currentChatSubtitle) currentChatSubtitle.textContent = 'Conversación';
-                if (currentChatMessages) currentChatMessages.innerHTML = '';
-
-                // Scroll to chat or open modal? Original just set activeChat.
-                // Assuming the chat container is visible in this view.
+                // Start chat with the owner of the greenpoint
+                startChat(user, gp.id_greenpoint);
             });
 
             // Toggle Comments Button
@@ -1045,12 +1143,33 @@ async function renderFeed(page = 1) {
 chatSendBtn.addEventListener('click', () => {
     const text = chatMessageInput.value.trim();
     if (!text || !activeChat) return;
-    const bubble = document.createElement('div');
-    bubble.className = 'msg msg-out';
-    bubble.textContent = text;
-    chatMessages.appendChild(bubble);
+
+    // Determine GreenPoint ID: 
+    // If we are in 'My Posts' mode (owner chatting with collector), activeChat.greenpointId is set.
+    // If we are in 'Feed' mode (collector chatting with owner), activeChat might be the owner user object, 
+    // but we need the greenpoint ID. 
+    // In 'startChat' (feed mode), we should probably attach the GP ID to activeChat as well.
+    // Let's assume activeChat has greenpointId property now.
+
+    const gpId = activeChat.greenpointId;
+
+    if (!gpId) {
+        console.error('No GreenPoint ID found for chat');
+        return;
+    }
+
+    // Emit via socket
+    if (socket && socket.connected) {
+        socket.emit('send_message', {
+            greenpoint_id: gpId,
+            content: text
+        });
+    }
+
+    // Optimistic UI update (optional, as socket will echo back)
+    // But let's wait for echo to avoid duplicates if we don't handle IDs
+    // For now, clear input
     chatMessageInput.value = '';
-    chatMessages.scrollTop = chatMessages.scrollHeight;
 });
 
 filterButtons.forEach(btn => {
@@ -1084,7 +1203,7 @@ const createEditForm = () =>
     <div class="filters-section">
         <h2>Registrar Nuevo GreenPoint</h2>
         <p>Selecciona la ubicación en el mapa y completa los datos.</p>
-        <form id="addGreenpointForm" class="add-form">
+        <form id="editGreenpointForm" class="add-form">
         <!-- Basic Info -->
         <div class="form-group">
             <label>Descripción</label>
@@ -1290,22 +1409,23 @@ function fillForm(greenpoint) {
 
 
 
-const addForm = document.getElementById('addGreenpointForm');
-if (addForm) {
-    addForm.addEventListener('submit', async (e) => {
+const editForm = document.getElementById('editGreenpointForm');
+if (editForm) {
+    // Remove existing listeners to avoid duplicates if renderEditForm is called multiple times
+    const newEditForm = editForm.cloneNode(true);
+    editForm.parentNode.replaceChild(newEditForm, editForm);
+
+    newEditForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // Obtener usuario del localStorage
         const userStr = localStorage.getItem('user');
         if (!userStr) {
-            alert('Debes iniciar sesión para registrar un GreenPoint.');
+            alert('Debes iniciar sesión.');
             return;
         }
-        const user = JSON.parse(userStr);
-        const id_citizen = user.id_user || user.id;
 
-        // Validaciones básicas
-        const coordsStr = coordsInput.value;
+        // Validations
+        const coordsStr = document.getElementById('gpCoords').value;
         if (!coordsStr) {
             alert('Selecciona una ubicación en el mapa.');
             return;
@@ -1319,7 +1439,6 @@ if (addForm) {
             return;
         }
 
-        // Obtener datos del formulario
         const description = document.getElementById('gpDescription').value;
         const direction = document.getElementById('gpDirection').value;
         const hour = document.getElementById('gpHour').value;
@@ -1328,72 +1447,66 @@ if (addForm) {
 
         const [lat, lng] = coordsStr.split(',').map(s => parseFloat(s.trim()));
 
-        const submitBtn = addForm.querySelector('.submit-btn');
+        const submitBtn = newEditForm.querySelector('.submit-btn');
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Procesando...';
+        submitBtn.textContent = 'Actualizando...';
 
         try {
             const headers = getAuthHeaders();
-            if (!headers['Authorization']) {
-                alert('No hay sesión activa.');
-                return;
-            }
+            const gpId = gp.id_greenpoint;
 
-            // 1. Crear GreenPoint
-            submitBtn.textContent = 'Creando GreenPoint...';
-            const gpPayload = {
-                id_category: selectedCategories[0], // Principal
-                coordinates: { latitude: lat, longitude: lng },
+            // 1. Update Basic Info
+            const updatePayload = {
                 description,
-                id_citizen,
-                hour,
                 direction,
-                date_collect
+                hour,
+                date_collect,
+                coordinates: { latitude: lat, longitude: lng },
+                // status: 'created' // Optional: reset status if needed
             };
 
-            const gpResponse = await fetch('http://localhost:3000/greenpoints', {
-                method: 'POST',
+            const res = await fetch(`${API_BASE}/greenpoints/${gpId}`, {
+                method: 'PATCH',
                 headers,
-                body: JSON.stringify(gpPayload)
+                body: JSON.stringify(updatePayload)
             });
 
-            if (!gpResponse.ok) {
-                const err = await gpResponse.json();
-                throw new Error(err.error || 'Error al crear GreenPoint');
-            }
+            if (!res.ok) throw new Error('Error al actualizar información básica');
 
-            const newGp = await gpResponse.json();
-            const gpId = newGp.id_greenpoint;
-            console.log('GreenPoint creado:', gpId);
+            // 2. Update Categories
+            await fetch(`${API_BASE}/greenpoints/${gpId}/categories`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ categoryIds: selectedCategories })
+            });
 
-            // 2. Asignar Categorías (si hay más de una o para asegurar)
-            if (selectedCategories.length > 0) {
-                submitBtn.textContent = 'Asignando categorías...';
-                await fetch(`http://localhost:3000/greenpoints/${gpId}/categories`, {
+            // 3. Add NEW Materials (Filter out existing ones to avoid duplicates if logic allows, 
+            // but here we only have the list 'materials'. 
+            // Ideally we should distinguish between new and existing. 
+            // For now, we'll assume 'materials' array contains what the user wants.
+            // However, the backend 'createManyMaterial' inserts. 
+            // We need to filter those that don't have an ID or handle this better.
+            // As a simplification matching 'insert' form: we only add *newly added* materials from the session.
+            // But 'materials' array currently holds ALL materials (loaded from DB + new).
+            // We need to identify which are new.
+            const newMaterials = materials.filter(m => !m.id_greenpoint_material);
+
+            if (newMaterials.length > 0) {
+                await fetch(`${API_BASE}/greenpoints/${gpId}/materials`, {
                     method: 'POST',
                     headers,
-                    body: JSON.stringify({ categoryIds: selectedCategories })
+                    body: JSON.stringify({ materials: newMaterials })
                 });
             }
 
-            // 3. Asignar Materiales
-            if (materials.length > 0) {
-                submitBtn.textContent = 'Registrando materiales...';
-                await fetch(`http://localhost:3000/greenpoints/${gpId}/materials`, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify({ materials })
-                });
-            }
-
-            // 4. Subir Imágenes
+            // 4. Upload NEW Images
             if (imagesInput.files.length > 0) {
                 submitBtn.textContent = 'Subiendo imágenes...';
                 for (const file of imagesInput.files) {
                     const formData = new FormData();
                     formData.append('photo', file);
 
-                    await fetch(`http://localhost:3000/greenpoints/${gpId}/photos`, {
+                    await fetch(`${API_BASE}/greenpoints/${gpId}/photos`, {
                         method: 'POST',
                         headers: {
                             'Authorization': headers['Authorization']
@@ -1403,28 +1516,18 @@ if (addForm) {
                 }
             }
 
-            alert('¡GreenPoint registrado exitosamente con todos los detalles!');
+            alert('¡GreenPoint actualizado exitosamente!');
 
-            // Resetear todo
-            addForm.reset();
-            materials = [];
-            renderMaterialsList();
-            coordsInput.value = '';
-            if (tempMarker) {
-                map.removeLayer(tempMarker);
-                tempMarker = null;
-            }
-
-            // Volver al mapa
-            toggleBtn.click();
-            cargarGreenPoints(mapInstance);
+            // Refresh feed or UI
+            // renderFeed(); // If available
+            window.location.reload(); // Simple refresh to show changes
 
         } catch (error) {
-            console.error('Error en el proceso:', error);
-            alert('Ocurrió un error: ' + error.message);
+            console.error('Error al actualizar:', error);
+            alert('Error al actualizar: ' + error.message);
         } finally {
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Registrar GreenPoint';
+            submitBtn.textContent = 'Actualizar GreenPoint';
         }
     });
 }
@@ -1641,7 +1744,64 @@ async function deleteGreenPoint(id) {
     }
 }
 
+
+async function fetchReservationAndStartChat(greenpointId) {
+    try {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${API_BASE}/api/greenpoints/${greenpointId}/reservations?status=accepted`, {
+            headers
+        });
+
+        if (!res.ok) throw new Error('Error al obtener información del chat');
+
+        const data = await res.json();
+        const reservations = data.reservations || [];
+        const accepted = reservations.find(r => r.status === 'accepted') || (reservations.length > 0 && reservations[0].status === 'accepted' ? reservations[0] : null);
+
+        if (accepted) {
+            const collector = {
+                id: accepted.id_collector,
+                username: accepted.collector_username,
+                avatar_url: accepted.collector_avatar
+            };
+
+            activeChat = collector;
+            activeChat.greenpointId = greenpointId;
+
+            const chatAvatar = document.getElementById('chatAvatar');
+            const chatUsername = document.getElementById('chatUsername');
+            const chatSubtitle = document.getElementById('chatSubtitle');
+
+            if (chatAvatar) {
+                chatAvatar.src = collector.avatar_url
+                    ? `${API_BASE}/profile_photo/${collector.avatar_url}.webp`
+                    : `https://api.dicebear.com/7.x/initials/svg?seed=${collector.username}`;
+                chatAvatar.style.display = 'block';
+            }
+            if (chatUsername) chatUsername.textContent = collector.username;
+            if (chatSubtitle) chatSubtitle.textContent = 'Recolector';
+
+            loadChatHistory(greenpointId);
+
+            if (socket && socket.connected) {
+                socket.emit('join_room', { greenpoint_id: greenpointId });
+            }
+
+            if (chatContainer) chatContainer.style.display = 'flex';
+            if (mainContainer) mainContainer.style.gridTemplateColumns = '250px 3fr 2fr';
+
+        } else {
+            alert('No se encontró un recolector asignado para este GreenPoint.');
+        }
+
+    } catch (err) {
+        console.error(err);
+        alert('Error al iniciar el chat: ' + err.message);
+    }
+}
+
 (async () => {
+    initSocket();
     await fetchMyReservations();
     renderFeed(1);
 })();

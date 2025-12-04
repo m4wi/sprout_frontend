@@ -19,7 +19,7 @@ const loadUserAvatar = () => {
 
             if (avatarImg && user.avatar_url) {
                 // Construir la URL completa de la imagen
-                avatarImg.src = `${STATIC_PHOTO_API_URL}${user.avatar_url}.webp`;
+                avatarImg.src = `${STATIC_PHOTO_API_URL}${user.avatar_url}`;
                 avatarImg.alt = `${user.name || 'Usuario'} ${user.lastname || ''}`;
             } else if (avatarImg) {
                 // Imagen por defecto si no hay avatar
@@ -88,7 +88,7 @@ const populateForm = (user) => {
 
     // Imagen
     if (user.avatar_url) {
-        document.getElementById('userPhoto').src = `${STATIC_PHOTO_API_URL}${user.avatar_url}.webp`;
+        document.getElementById('userPhoto').src = `${STATIC_PHOTO_API_URL}${user.avatar_url}`;
     } else {
         document.getElementById('userPhoto').src = 'default.webp';
     }
@@ -172,7 +172,7 @@ const updateUserData = async (userId, formData) => {
                 delete updateData[key];
             }
         });
-
+        console.log(updateData);
         const response = await fetch(`${API_URL}/users/update/${userId}`, {
             method: 'PATCH',
             headers: headers,
@@ -234,17 +234,104 @@ const handleFormSubmit = async (event) => {
 };
 
 /**
- * Inicializa la página
+ * Maneja la subida de la foto de perfil
  */
+const handlePhotoUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validar tipo y tamaño
+    if (!file.type.startsWith('image/')) {
+        showMessage('Por favor selecciona un archivo de imagen válido', 'error');
+        return;
+    }
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        showMessage('La imagen no debe superar los 5MB', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    const changePhotoBtn = document.getElementById('changePhoto');
+    const originalText = changePhotoBtn.textContent;
+    changePhotoBtn.disabled = true;
+    changePhotoBtn.textContent = 'Subiendo...';
+
+    try {
+        const token = getAuthToken();
+        const response = await fetch(`${API_URL}/users/upload-photo/${currentUserId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al subir la imagen');
+        }
+
+        const data = await response.json();
+
+        // Actualizar la imagen en la interfaz
+        const avatarImg = document.getElementById('userPhoto');
+        if (avatarImg && data.avatar_url) {
+            avatarImg.src = `${STATIC_PHOTO_API_URL}${data.avatar_url}?t=${new Date().getTime()}`; // Cache busting
+        }
+
+        // Actualizar localStorage
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            user.avatar_url = data.avatar_url;
+            localStorage.setItem('user', JSON.stringify(user));
+        }
+
+        showMessage('Foto de perfil actualizada', 'success');
+
+    } catch (error) {
+        console.error('Error uploading photo:', error);
+        showMessage('Error al actualizar la foto de perfil', 'error');
+    } finally {
+        changePhotoBtn.disabled = false;
+        changePhotoBtn.textContent = originalText;
+        event.target.value = ''; // Reset input
+    }
+};
+
+/**
+ * Inicializa la funcionalidad de cambio de foto
+ */
+const initPhotoUpload = () => {
+    const changePhotoBtn = document.getElementById('changePhoto');
+    if (!changePhotoBtn) return;
+
+    // Crear input file oculto si no existe
+    let fileInput = document.getElementById('photoInput');
+    if (!fileInput) {
+        fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.id = 'photoInput';
+        fileInput.accept = 'image/*';
+        fileInput.style.display = 'none';
+        document.body.appendChild(fileInput);
+
+        fileInput.addEventListener('change', handlePhotoUpload);
+    }
+
+    changePhotoBtn.onclick = () => fileInput.click();
+};
+
 const init = async () => {
     try {
         // Obtener el ID del usuario (por ahora usa 1, pero deberías obtenerlo del token o de la sesión)
         // TODO: Obtener el ID del usuario desde el token JWT o la sesión
-        const userId = 1; // Esto debería venir del token o sesión
-
-        const user = await getUserData(userId);
+        currentUserId = JSON.parse(localStorage.getItem('user')).id_user;
+        const user = await getUserData(currentUserId);
         console.log('Usuario cargado:', user);
         populateForm(user);
+        initPhotoUpload(); // Inicializar subida de fotos
 
         // Agregar manejador de evento al formulario
         const form = document.querySelector('form');

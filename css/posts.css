@@ -16,7 +16,7 @@ main {
     grid-template-columns: 250px 1fr 350px;
     gap: 1.5rem;
     padding: 1.5rem;
-    background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+    background: linear-gradient(276deg, #ecffdb 0%, #b3e9a7 100%);
     overflow: hidden;
     min-height: 0;
 }
@@ -580,4 +580,24 @@ main>section:nth-child(2) {
     font-size: 1.5rem;
     cursor: pointer;
     color: #666;
+}
+
+.background-doodle {
+    position: absolute;
+    top: 50%;
+    left: 20%;
+    width: 80vh;
+    transform: translate(-50%, -50%);
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+.background-child-doodle {
+    position: absolute;
+    top: 70%;
+    left: 90%;
+    width: 30vh;
+    transform: translate(-50%, -50%);
+    opacity: 0.8;
+    pointer-events: none;
 }
