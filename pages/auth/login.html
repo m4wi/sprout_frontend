@@ -211,7 +211,7 @@
 
     <script>
         // Configuración
-        const API_URL = 'http://localhost:3000/auth';
+        const API_URL = 'http://57.154.66.87:3000/auth';
         const LOGIN_ENDPOINT = `${API_URL}/login`;
 
         // Obtener elementos del DOM
@@ -256,7 +256,7 @@
                     localStorage.setItem('user', JSON.stringify(data.user));
 
                     // Redirigir según el tipo de usuario
-                    const userType = data.user.userType || data.user.tipo;
+                    const userType = data.user.user_type || data.user.tipo;
                     if (userType === 'admin') {
                         window.location.href = '/pages/admin/dashboard.html';
                     } else {

@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'http://57.154.66.87:3000';
 
 const listActive = document.getElementById('list-active');
 const listFinished = document.getElementById('list-finished');

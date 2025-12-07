@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - RyGreen</title>
+    <link rel="stylesheet" href="../../css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <nav class="sidebar glass-panel">
+            <div class="sidebar-header">
+                <h2>RyGreen Admin</h2>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link active">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a href="users.html" class="nav-link">
+                    <i class="fas fa-users"></i> Usuarios
+                </a>
+                <a href="greenpoints.html" class="nav-link">
+                    <i class="fas fa-map-marker-alt"></i> Puntos Verdes
+                </a>
+                <a href="reports.html" class="nav-link">
+                    <i class="fas fa-flag"></i> Reportes
+                </a>
+                <a href="categories.html" class="nav-link">
+                    <i class="fas fa-tags"></i> Categorías
+                </a>
+                <a href="#" id="logoutBtn" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="header glass-panel" style="padding: 1rem 2rem;">
+                <h1>Dashboard Overview</h1>
+                <div class="user-info">
+                    <span>Admin</span>
+                </div>
+            </header>
+
+            <div class="stats-grid">
+                <div class="stat-card glass-panel">
+                    <span class="stat-label">Total Usuarios</span>
+                    <span class="stat-value" id="totalUsers">0</span>
+                    <i class="fas fa-users" style="color: var(--accent-color)"></i>
+                </div>
+                <div class="stat-card glass-panel">
+                    <span class="stat-label">Puntos Verdes</span>
+                    <span class="stat-value" id="totalGreenpoints">0</span>
+                    <i class="fas fa-leaf" style="color: #8bc34a"></i>
+                </div>
+                <div class="stat-card glass-panel">
+                    <span class="stat-label">Reportes Pendientes</span>
+                    <span class="stat-value" id="pendingReports">0</span>
+                    <i class="fas fa-exclamation-circle" style="color: var(--warning-color)"></i>
+                </div>
+            </div>
+
+            <div class="recent-activity glass-panel" style="padding: 2rem;">
+                <h3>Actividad Reciente</h3>
+                <p style="color: var(--text-secondary)">Próximamente...</p>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="../../js/admin/dashboard.js"></script>
+</body>
+</html>

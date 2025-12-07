@@ -12,7 +12,7 @@ const loadUserAvatar = () => {
 
             if (avatarImg && user.avatar_url) {
                 // Construir la URL completa de la imagen
-                avatarImg.src = `${STATIC_PHOTO_API_URL}${user.avatar_url}.webp`;
+                avatarImg.src = `${STATIC_PHOTO_API_URL}${user.avatar_url}`;
                 avatarImg.alt = `${user.name || 'Usuario'} ${user.lastname || ''}`;
             } else if (avatarImg) {
                 // Imagen por defecto si no hay avatar
@@ -64,7 +64,7 @@ let mapInstance = null;
 const fetchGreenPointsByCategory = async (categoryId) => {
     try {
         const headers = getAuthHeaders();
-        const response = await fetch(`http://localhost:3000/greenpoints/findCategory/${categoryId}`, { headers });
+        const response = await fetch(`http://57.154.66.87:3000/greenpoints/findCategory/${categoryId}`, { headers });
         if (!response.ok) {
             throw new Error('Error al obtener greenpoints');
         }
@@ -146,7 +146,7 @@ const renderGreenPoints = (greenpoints) => {
 async function cargarGreenPoints(map) {
     try {
         const headers = getAuthHeaders();
-        const res = await fetch("http://localhost:3000/greenpoints", { headers }); // tu endpoint
+        const res = await fetch("http://57.154.66.87:3000/greenpoints", { headers }); // tu endpoint
         const data = await res.json();
 
         map.clearMarkers();
@@ -215,7 +215,7 @@ const fetchNotifications = async () => {
             return;
         }
 
-        const response = await fetch('http://localhost:3000/notifications', { headers });
+        const response = await fetch('http://57.154.66.87:3000/notifications', { headers });
         if (!response.ok) {
             if (response.status === 401 || response.status === 403) {
                 // Token invalido o expirado
@@ -281,7 +281,7 @@ const markAsRead = async (id) => {
         const headers = getAuthHeaders();
         if (!headers['Authorization']) return;
 
-        await fetch(`http://localhost:3000/notifications/${id}/read`, {
+        await fetch(`http://57.154.66.87:3000/notifications/${id}/read`, {
             method: 'PATCH',
             headers
         });
@@ -297,7 +297,7 @@ const markAllAsRead = async () => {
         const headers = getAuthHeaders();
         if (!headers['Authorization']) return;
 
-        await fetch('http://localhost:3000/notifications/mark-all-read', {
+        await fetch('http://57.154.66.87:3000/notifications/mark-all-read', {
             method: 'PATCH',
             headers
         });
@@ -529,7 +529,7 @@ const init = () => {
 
             try {
                 const headers = getAuthHeaders();
-                const response = await fetch(`http://localhost:3000/greenpoints/nearby?lat=${lat}&lng=${lng}&radius=5`, { headers });
+                const response = await fetch(`http://57.154.66.87:3000/greenpoints/nearby?lat=${lat}&lng=${lng}&radius=5`, { headers });
                 if (!response.ok) throw new Error('Error en la búsqueda');
 
                 const data = await response.json();
@@ -809,7 +809,7 @@ const init = () => {
                     date_collect
                 };
 
-                const gpResponse = await fetch('http://localhost:3000/greenpoints', {
+                const gpResponse = await fetch('http://57.154.66.87:3000/greenpoints', {
                     method: 'POST',
                     headers,
                     body: JSON.stringify(gpPayload)
@@ -827,7 +827,7 @@ const init = () => {
                 // 2. Asignar Categorías (si hay más de una o para asegurar)
                 if (selectedCategories.length > 0) {
                     submitBtn.textContent = 'Asignando categorías...';
-                    await fetch(`http://localhost:3000/greenpoints/${gpId}/categories`, {
+                    await fetch(`http://57.154.66.87:3000/greenpoints/${gpId}/categories`, {
                         method: 'POST',
                         headers,
                         body: JSON.stringify({ categoryIds: selectedCategories })
@@ -837,7 +837,7 @@ const init = () => {
                 // 3. Asignar Materiales
                 if (materials.length > 0) {
                     submitBtn.textContent = 'Registrando materiales...';
-                    await fetch(`http://localhost:3000/greenpoints/${gpId}/materials`, {
+                    await fetch(`http://57.154.66.87:3000/greenpoints/${gpId}/materials`, {
                         method: 'POST',
                         headers,
                         body: JSON.stringify({ materials })
@@ -854,7 +854,7 @@ const init = () => {
                         formData.append('photo', file);
 
                         try {
-                            const res = await fetch(`http://localhost:3000/greenpoints/${gpId}/photos`, {
+                            const res = await fetch(`http://57.154.66.87:3000/greenpoints/${gpId}/photos`, {
                                 method: 'POST',
                                 headers: {
                                     'Authorization': headers['Authorization']

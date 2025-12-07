@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'http://57.154.66.87:3000';
 const token = localStorage.getItem('token');
 const userStr = localStorage.getItem('user');
 const currentUser = userStr ? JSON.parse(userStr) : null;
@@ -355,10 +355,12 @@ async function postComment(greenpointId, content) {
 }
 
 async function createReservation(greenpointId) {
+    const headers = getAuthHeaders();
+    console.log(headers);
     if (!token) return false;
     const res = await fetch(`${API_BASE}/api/greenpoints/${greenpointId}/reservations`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: headers,
         body: JSON.stringify({ message: 'Solicitud de reserva' })
     });
     return res.ok;
@@ -441,7 +443,7 @@ async function renderMyPosts(page = 1) {
 
             const avatar = document.createElement('img');
             avatar.className = 'avatar';
-            avatar.src = currentUser?.avatar_url ? `${API_BASE}/profile_photo/${currentUser.avatar_url}.webp` : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (currentUser?.username || 'user');
+            avatar.src = currentUser?.avatar_url ? `${API_BASE}/profile_photo/${currentUser.avatar_url}` : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (currentUser?.username || 'user');
 
             const hinfo = document.createElement('div');
             const uname = document.createElement('div');
@@ -831,7 +833,7 @@ async function renderFeed(page = 1) {
 
             const avatar = document.createElement('img');
             avatar.className = 'avatar';
-            avatar.src = user?.avatar_url ? `${API_BASE}/profile_photo/${user.avatar_url}.webp` : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (user?.username || 'user');
+            avatar.src = user?.avatar_url ? `${API_BASE}/profile_photo/${user.avatar_url}` : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (user?.username || 'user');
 
             const hinfo = document.createElement('div');
             const uname = document.createElement('div');
@@ -1665,7 +1667,7 @@ async function renderReservationsList(greenpointId) {
 
                 const avatar = document.createElement('img');
                 avatar.className = 'avatar sm';
-                avatar.src = r.collector_avatar ? `${API_BASE}/profile_photo/${r.collector_avatar}.webp` : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (r.collector_username || 'user');
+                avatar.src = r.collector_avatar ? `${API_BASE}/profile_photo/${r.collector_avatar}` : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (r.collector_username || 'user');
 
                 const info = document.createElement('div');
                 const name = document.createElement('div');
@@ -1774,7 +1776,7 @@ async function fetchReservationAndStartChat(greenpointId) {
 
             if (chatAvatar) {
                 chatAvatar.src = collector.avatar_url
-                    ? `${API_BASE}/profile_photo/${collector.avatar_url}.webp`
+                    ? `${API_BASE}/profile_photo/${collector.avatar_url}`
                     : `https://api.dicebear.com/7.x/initials/svg?seed=${collector.username}`;
                 chatAvatar.style.display = 'block';
             }

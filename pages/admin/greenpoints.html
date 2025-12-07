@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Puntos Verdes - Admin</title>
+    <link rel="stylesheet" href="../../css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <nav class="sidebar glass-panel">
+            <div class="sidebar-header">
+                <h2>RyGreen Admin</h2>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a href="users.html" class="nav-link">
+                    <i class="fas fa-users"></i> Usuarios
+                </a>
+                <a href="greenpoints.html" class="nav-link active">
+                    <i class="fas fa-map-marker-alt"></i> Puntos Verdes
+                </a>
+                <a href="reports.html" class="nav-link">
+                    <i class="fas fa-flag"></i> Reportes
+                </a>
+                <a href="categories.html" class="nav-link">
+                    <i class="fas fa-tags"></i> Categorías
+                </a>
+                <a href="#" id="logoutBtn" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="header glass-panel" style="padding: 1rem 2rem;">
+                <h1>Gestión de Puntos Verdes</h1>
+            </header>
+
+            <div class="glass-panel" style="padding: 2rem;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Descripción</th>
+                            <th>Ciudadano</th>
+                            <th>Categorías</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="greenpointsTableBody">
+                        <!-- Greenpoints will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="../../js/admin/greenpoints.js"></script>
+</body>
+
+</html>
