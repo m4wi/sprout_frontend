@@ -1,4 +1,4 @@
-import { STATIC_PHOTO_API_URL } from '/config.js';
+import { API_URL, STATIC_GREENPOINT_PHOTO_URL, STATIC_PHOTO_API_URL } from '/config.js';
 
 /**
  * Carga la imagen del usuario desde localStorage
@@ -12,6 +12,7 @@ const loadUserAvatar = () => {
 
             if (avatarImg && user.avatar_url) {
                 // Construir la URL completa de la imagen
+                console.log(user.avatar_url)
                 avatarImg.src = `${STATIC_PHOTO_API_URL}${user.avatar_url}`;
                 avatarImg.alt = `${user.name || 'Usuario'} ${user.lastname || ''}`;
             } else if (avatarImg) {
@@ -64,7 +65,7 @@ let mapInstance = null;
 const fetchGreenPointsByCategory = async (categoryId) => {
     try {
         const headers = getAuthHeaders();
-        const response = await fetch(`http://57.154.66.87:3000/greenpoints/findCategory/${categoryId}`, { headers });
+        const response = await fetch(`${API_URL}/greenpoints/findCategory/${categoryId}`, { headers });
         if (!response.ok) {
             throw new Error('Error al obtener greenpoints');
         }
@@ -81,9 +82,18 @@ const fetchGreenPointsByCategory = async (categoryId) => {
 const filteredCategoryPopup = (greenpoint) => {
     console.log(greenpoint)
     //console.log(greenpoint)
-    const foto = greenpoint.avatar_url
-        ? `<img src="${greenpoint.avatar_url}" class="popup-img" />`
-        : `<img src="https://via.placeholder.com/150" class="popup-img" />`;
+    let photoUrl = '/assets/greenpoint/greenpoint_default.webp';
+
+    if (greenpoint.photos && greenpoint.photos.length > 0) {
+        const tempUrl = greenpoint.photos[0].url;
+        if (tempUrl) {
+            photoUrl = tempUrl.startsWith('http')
+                ? tempUrl
+                : `${STATIC_GREENPOINT_PHOTO_URL}${tempUrl}`;
+        }
+    }
+
+    const foto = `<img src="${photoUrl}" class="popup-img" />`;
 
     const categorias = (greenpoint.categories || [])
         .slice(0, 2) // máximo 2 categorías
@@ -105,65 +115,131 @@ const filteredCategoryPopup = (greenpoint) => {
 
 
 // Función para renderizar los resultados
-const renderGreenPoints = (greenpoints) => {
+// Función para renderizar los resultados
+const renderGreenPoints = (greenpoints, shouldClear = true) => {
     const container = document.getElementById('resultsContainer');
-    container.innerHTML = ''; // Limpiar resultados anteriores
+    if (shouldClear) {
+        container.innerHTML = ''; // Limpiar resultados anteriores
+    }
     container.style.display = 'block';
 
-    // Limpiar marcadores del mapa
-    if (mapInstance) {
+    // Limpiar marcadores del mapa SOLO si es una nueva búsqueda (shouldClear = true)
+    if (mapInstance && shouldClear) {
         mapInstance.clearMarkers();
     }
 
-    if (greenpoints.length === 0) {
-        container.innerHTML = '<p>No se encontraron puntos de reciclaje para esta categoría.</p>';
-        return;
+    // Buscar lista existente o crear nueva
+    let list = container.querySelector('.greenpoints-list');
+    if (!list) {
+        list = document.createElement('ul');
+        list.className = 'greenpoints-list';
+        container.appendChild(list);
     }
 
-    const list = document.createElement('ul');
-    list.className = 'greenpoints-list';
+    if (greenpoints.length === 0) {
+        if (shouldClear) {
+            container.innerHTML = '<p>No se encontraron puntos de reciclaje para esta categoría.</p>';
+        }
+        return;
+    }
 
     greenpoints.forEach(gp => {
         // Crear elemento de lista
         const item = document.createElement('li');
         item.className = 'greenpoint-item';
+
+        let photoUrl = '/assets/greenpoint/greenpoint_default.webp';
+
+        if (gp.photos && gp.photos.length > 0) {
+            const tempUrl = gp.photos[0].url;
+            if (tempUrl) {
+                photoUrl = tempUrl.startsWith('http')
+                    ? tempUrl
+                    : `${STATIC_GREENPOINT_PHOTO_URL}${tempUrl}`;
+            }
+        }
+
+        const imageHtml = `<img src="${photoUrl}" alt="${gp.description}" style="width:80px; height:80px; object-fit:cover; border-radius:8px; flex-shrink:0;">`;
+
+        // Apply flex row layout
+        item.style.flexDirection = 'row';
+        item.style.alignItems = 'flex-start';
+        item.style.gap = '1rem';
+
         item.innerHTML = `
-            <h3>${gp.description}</h3>
-            <p><strong>Horario:</strong> ${gp.hour || 'Sin descripción'}</p>
-            <div class="categories">
-                ${(gp.categories || []).map(cat => `<span class="category-tag">${cat.name}</span>`).join('') || '<span class="category-tag">Sin categorías</span>'}
+            ${imageHtml}
+            <div style="flex:1; display:flex; flex-direction:column; gap:0.25rem;">
+                <h3 style="margin:0;">${gp.description}</h3>
+                <p style="margin:0;"><strong>Horario:</strong> ${gp.hour || 'Sin descripción'}</p>
+                <div class="categories" style="margin-top:0.25rem;">
+                    ${(gp.categories || []).map(cat => `<span class="category-tag">${cat.name}</span>`).join('') || '<span class="category-tag">Sin categorías</span>'}
+                </div>
             </div>
         `;
         list.appendChild(item);
         drawMarker(mapInstance, gp, filteredCategoryPopup(gp));
     });
 
-    container.appendChild(list);
 };
 
 
 
-async function cargarGreenPoints(map) {
+// Pagination State
+let currentAllPage = 1;
+let isLoadingAll = false;
+
+async function cargarGreenPoints(map, page = 1) {
+    if (isLoadingAll) return;
+    isLoadingAll = true;
+
     try {
         const headers = getAuthHeaders();
-        const res = await fetch("http://57.154.66.87:3000/greenpoints", { headers }); // tu endpoint
+        // Reset page if requesting page 1
+        if (page === 1) {
+            currentAllPage = 1;
+        }
+
+        const res = await fetch(`${API_URL}/greenpoints?page=${page}&limit=10`, { headers });
         const data = await res.json();
 
-        map.clearMarkers();
+        // Handle pagination response structure or direct array (backward compatibility check)
+        const greenpoints = data.greenpoints || (Array.isArray(data) ? data : []);
+        const pagination = data.pagination;
 
-        data.forEach(gp => {
-            drawMarker(mapInstance, gp, "dout");
-        });
+        // Render (clear if page 1, append if > 1)
+        renderGreenPoints(greenpoints, page === 1);
+
+        // Update load more button
+        const container = document.getElementById('resultsContainer');
+        let loadMoreBtn = document.getElementById('btnLoadMoreAll');
+
+        if (loadMoreBtn) loadMoreBtn.remove(); // Remove old button to re-position
+
+        if (pagination && pagination.currentPage < pagination.totalPages) {
+            loadMoreBtn = document.createElement('button');
+            loadMoreBtn.id = 'btnLoadMoreAll';
+            loadMoreBtn.className = 'btn-primary';
+            loadMoreBtn.innerText = 'Cargar más';
+            loadMoreBtn.style.marginTop = '1rem';
+            loadMoreBtn.style.width = '100%';
+            loadMoreBtn.onclick = () => {
+                currentAllPage++;
+                cargarGreenPoints(map, currentAllPage);
+            };
+            container.appendChild(loadMoreBtn);
+        }
 
     } catch (err) {
         console.error("Error cargando GreenPoints:", err);
+    } finally {
+        isLoadingAll = false;
     }
 }
 
 async function drawMarker(mapInstance, gp, options) {
 
-    const greenIcon = L.icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+    const createIcon = (url) => L.icon({
+        iconUrl: url,
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-shadow.png',
         iconSize: [25, 41],
         iconAnchor: [12, 41],
@@ -171,19 +247,17 @@ async function drawMarker(mapInstance, gp, options) {
         shadowSize: [41, 41]
     });
 
-    const redIcon = L.icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-    });
+    const greenIcon = createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png');
+    const orangeIcon = createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png');
+    const goldIcon = createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png');
 
+    let icon = greenIcon; // Default for others
 
-    const icon = gp.status === 'approved' || gp.status === 'pending' || gp.status === 'created'
-        ? greenIcon
-        : redIcon;
+    if (gp.status === 'reserved') {
+        icon = orangeIcon;
+    } else if (gp.status === 'pending') {
+        icon = goldIcon;
+    }
 
     const lat = gp.coordinates.y || gp.coordinates.latitude;
     const lng = gp.coordinates.x || gp.coordinates.longitude;
@@ -215,7 +289,7 @@ const fetchNotifications = async () => {
             return;
         }
 
-        const response = await fetch('http://57.154.66.87:3000/notifications', { headers });
+        const response = await fetch(`${API_URL}/notifications`, { headers });
         if (!response.ok) {
             if (response.status === 401 || response.status === 403) {
                 // Token invalido o expirado
@@ -281,7 +355,7 @@ const markAsRead = async (id) => {
         const headers = getAuthHeaders();
         if (!headers['Authorization']) return;
 
-        await fetch(`http://57.154.66.87:3000/notifications/${id}/read`, {
+        await fetch(`${API_URL}/notifications/${id}/read`, {
             method: 'PATCH',
             headers
         });
@@ -297,7 +371,7 @@ const markAllAsRead = async () => {
         const headers = getAuthHeaders();
         if (!headers['Authorization']) return;
 
-        await fetch('http://57.154.66.87:3000/notifications/mark-all-read', {
+        await fetch(`${API_URL}/notifications/mark-all-read`, {
             method: 'PATCH',
             headers
         });
@@ -339,6 +413,8 @@ const init = () => {
             // Llamar al backend
             if (categoryId) {
                 fetchGreenPointsByCategory(categoryId);
+            } else if (category === 'all') {
+                cargarGreenPoints(mapInstance);
             }
         });
     });
@@ -527,9 +603,17 @@ const init = () => {
                 return;
             }
 
+            // Validar rango de coordenadas
+            const latNum = parseFloat(lat);
+            const lngNum = parseFloat(lng);
+            if (latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
+                alert('Coordenadas inválidas: Latitud debe estar entre -90 y 90, Longitud entre -180 y 180.');
+                return;
+            }
+
             try {
                 const headers = getAuthHeaders();
-                const response = await fetch(`http://57.154.66.87:3000/greenpoints/nearby?lat=${lat}&lng=${lng}&radius=5`, { headers });
+                const response = await fetch(`${API_URL}/greenpoints/nearby?lat=${lat}&lng=${lng}&radius=5`, { headers });
                 if (!response.ok) throw new Error('Error en la búsqueda');
 
                 const data = await response.json();
@@ -762,27 +846,63 @@ const init = () => {
             const user = JSON.parse(userStr);
             const id_citizen = user.id_user || user.id;
 
-            // Validaciones básicas
-            const coordsStr = coordsInput.value;
-            if (!coordsStr) {
-                alert('Selecciona una ubicación en el mapa.');
+            // Función de validación interna
+            const validateGreenPointForm = () => {
+                const description = document.getElementById('gpDescription').value.trim();
+                const direction = document.getElementById('gpDirection').value.trim();
+                const coordsStr = coordsInput.value;
+
+                // 1. Descripción
+                if (description.length < 10) {
+                    throw new Error('La descripción debe tener al menos 10 caracteres.');
+                }
+
+                // 2. Dirección
+                if (direction.length < 5) {
+                    throw new Error('La dirección debe tener al menos 5 caracteres.');
+                }
+
+                // 3. Coordenadas
+                if (!coordsStr) {
+                    throw new Error('Selecciona una ubicación en el mapa.');
+                }
+
+                // 4. Categorías
+                const selectedCats = Array.from(document.querySelectorAll('.checkbox-group input:checked'));
+                if (selectedCats.length === 0) {
+                    throw new Error('Selecciona al menos una categoría.');
+                }
+
+                // 5. Materiales
+                if (materials.length === 0) {
+                    throw new Error('Debes agregar al menos un material que se recicle en este punto.');
+                }
+
+                // 6. Imágenes
+                if (selectedImages.length === 0) {
+                    throw new Error('Debes subir al menos una imagen del punto de reciclaje.');
+                }
+
+                return {
+                    description,
+                    direction,
+                    selectedCategories: selectedCats.map(cb => parseInt(cb.value))
+                };
+            };
+
+            let validationData;
+            try {
+                validationData = validateGreenPointForm();
+            } catch (err) {
+                alert(err.message);
                 return;
             }
 
-            const selectedCategories = Array.from(document.querySelectorAll('.checkbox-group input:checked'))
-                .map(cb => parseInt(cb.value));
+            const { description, direction, selectedCategories } = validationData;
 
-            if (selectedCategories.length === 0) {
-                alert('Selecciona al menos una categoría.');
-                return;
-            }
-
-            // Obtener datos del formulario
-            const description = document.getElementById('gpDescription').value;
-            const direction = document.getElementById('gpDirection').value;
+            // Obtener otros datos del formulario
             const hour = document.getElementById('gpHour').value;
             const date_collect = document.getElementById('gpDateCollect').value;
-            const imagesInput = document.getElementById('gpImages');
 
             const [lat, lng] = coordsStr.split(',').map(s => parseFloat(s.trim()));
 
@@ -809,7 +929,7 @@ const init = () => {
                     date_collect
                 };
 
-                const gpResponse = await fetch('http://57.154.66.87:3000/greenpoints', {
+                const gpResponse = await fetch(`${API_URL}/greenpoints`, {
                     method: 'POST',
                     headers,
                     body: JSON.stringify(gpPayload)
@@ -827,7 +947,7 @@ const init = () => {
                 // 2. Asignar Categorías (si hay más de una o para asegurar)
                 if (selectedCategories.length > 0) {
                     submitBtn.textContent = 'Asignando categorías...';
-                    await fetch(`http://57.154.66.87:3000/greenpoints/${gpId}/categories`, {
+                    await fetch(`${API_URL}/greenpoints/${gpId}/categories`, {
                         method: 'POST',
                         headers,
                         body: JSON.stringify({ categoryIds: selectedCategories })
@@ -837,7 +957,7 @@ const init = () => {
                 // 3. Asignar Materiales
                 if (materials.length > 0) {
                     submitBtn.textContent = 'Registrando materiales...';
-                    await fetch(`http://57.154.66.87:3000/greenpoints/${gpId}/materials`, {
+                    await fetch(`${API_URL}/greenpoints/${gpId}/materials`, {
                         method: 'POST',
                         headers,
                         body: JSON.stringify({ materials })
@@ -854,7 +974,7 @@ const init = () => {
                         formData.append('photo', file);
 
                         try {
-                            const res = await fetch(`http://57.154.66.87:3000/greenpoints/${gpId}/photos`, {
+                            const res = await fetch(`${API_URL}/greenpoints/${gpId}/photos`, {
                                 method: 'POST',
                                 headers: {
                                     'Authorization': headers['Authorization']

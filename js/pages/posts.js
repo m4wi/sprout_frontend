@@ -1,20 +1,16 @@
-const API_BASE = 'http://57.154.66.87:3000';
+import { API_URL, STATIC_PHOTO_API_URL } from '/config.js';
+
+
 const token = localStorage.getItem('token');
 const userStr = localStorage.getItem('user');
 const currentUser = userStr ? JSON.parse(userStr) : null;
 const currentUserId = currentUser?.id_user || currentUser?.id_usuario || currentUser?.id || null;
 
 const filterButtons = document.querySelectorAll('.filter-btn');
+// DOM Elements are now fetched dynamically to avoid "detached" references
 const feedContainer = document.getElementById('feedContainer');
 const feedSection = document.getElementById('feedSection');
-const chatContainer = document.getElementById('chatContainer');
 const chatSection = document.getElementById('chatSection');
-const chatMessages = document.getElementById('chatMessages');
-const chatSendBtn = document.getElementById('chatSendBtn');
-const chatMessageInput = document.getElementById('chatMessageInput');
-const chatAvatar = document.getElementById('chatAvatar');
-const chatUsername = document.getElementById('chatUsername');
-const chatSubtitle = document.getElementById('chatSubtitle');
 const mainContainer = document.getElementById('mainContainer');
 
 let feedData = [];
@@ -40,7 +36,7 @@ function initSocket() {
     if (!token) return;
 
     if (typeof io !== 'undefined') {
-        socket = io(API_BASE, {
+        socket = io(API_URL, {
             auth: { token }
         });
 
@@ -66,6 +62,7 @@ function initSocket() {
 }
 
 function appendMessage(msg) {
+    const chatMessages = document.getElementById('chatMessages');
     if (!chatMessages) return;
 
     const div = document.createElement('div');
@@ -80,11 +77,12 @@ function appendMessage(msg) {
 }
 
 async function loadChatHistory(greenpointId) {
+    const chatMessages = document.getElementById('chatMessages');
     if (!chatMessages) return;
     chatMessages.innerHTML = '<div style="text-align:center; color:#888;">Cargando chat...</div>';
 
     try {
-        const res = await fetch(`${API_BASE}/greenpoints/${greenpointId}/chat`, {
+        const res = await fetch(`${API_URL}/greenpoints/${greenpointId}/chat`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
 
@@ -198,15 +196,44 @@ style.textContent = `
   .skel-line.short { width: 60%; }
   .skel-msg { height: 40px; width: 80%; background: #e0e0e0; border-radius: 8px; margin-bottom: 10px; }
   .skel-msg.right { align-self: flex-end; background: #d1e7dd; }
+
+  /* Image Drop Area Styles */
+  .image-upload-container { display: flex; flex-direction: column; gap: 1rem; }
+  .drop-area {
+      border: 2px dashed rgba(101, 173, 45, 0.4);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.3);
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: #1b4332;
+  }
+  .drop-area:hover { background: rgba(255, 255, 255, 0.6); border-color: #65ad2d; }
+  .drop-area svg { width: 48px; height: 48px; opacity: 0.7; }
+  .image-preview-container { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 10px;}
+  .preview-img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
 `;
 document.head.appendChild(style);
 
 function restoreChatUI() {
+    console.log('Restoring chat UI');
     const chatSection = document.getElementById('chatSection');
     if (!chatSection) return;
 
-    // Check if chatContainer already exists and is valid
-    if (document.getElementById('chatContainer')) return;
+    // Check if chatContainer already exists and is valid (has messages area)
+    if (document.getElementById('chatContainer') && document.getElementById('chatMessages')) return;
 
     chatSection.innerHTML = `
         <div id="chatContainer" class="chatbox">
@@ -266,34 +293,17 @@ function restoreChatUI() {
         </div>
     `;
 
-    // Re-bind global variables
-    const newChatContainer = document.getElementById('chatContainer');
-    const newChatMessages = document.getElementById('chatMessages');
+    // Bind event listeners
     const newChatSendBtn = document.getElementById('chatSendBtn');
     const newChatMessageInput = document.getElementById('chatMessageInput');
-    const newChatAvatar = document.getElementById('chatAvatar');
-    const newChatUsername = document.getElementById('chatUsername');
-    const newChatSubtitle = document.getElementById('chatSubtitle');
 
-    // Re-attach event listeners
     if (newChatSendBtn) {
-        newChatSendBtn.addEventListener('click', () => {
-            const text = newChatMessageInput.value.trim();
-            if (!text) return; // Allow sending even if no active chat for demo? No, check activeChat
+        newChatSendBtn.onclick = handleSendMessage;
+    }
 
-            // If skeleton is present, clear it on first message? 
-            // Or better, only allow sending if activeChat is set.
-            if (!activeChat) {
-                alert('Selecciona una publicación para chatear');
-                return;
-            }
-
-            const bubble = document.createElement('div');
-            bubble.className = 'msg msg-out';
-            bubble.textContent = text;
-            newChatMessages.appendChild(bubble);
-            newChatMessageInput.value = '';
-            newChatMessages.scrollTop = newChatMessages.scrollHeight;
+    if (newChatMessageInput) {
+        newChatMessageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSendMessage();
         });
     }
 }
@@ -308,7 +318,7 @@ function timeAgo(ts) {
 }
 
 async function fetchAllGreenpoints() {
-    const res = await fetch(`${API_BASE}/greenpoints`);
+    const res = await fetch(`${API_URL}/greenpoints`);
     if (!res.ok) throw new Error('Error al cargar publicaciones');
     const data = await res.json();
     feedData = data.filter(gp => gp.status !== 'deleted');
@@ -317,7 +327,7 @@ async function fetchAllGreenpoints() {
 async function fetchMyReservations() {
     if (!token) return;
     try {
-        const res = await fetch(`${API_BASE}/api/reservations/my-reservations`, {
+        const res = await fetch(`${API_URL}/api/reservations/my-reservations`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -330,13 +340,13 @@ async function fetchMyReservations() {
 }
 
 async function fetchUser(id) {
-    const res = await fetch(`${API_BASE}/users/${id}`);
+    const res = await fetch(`${API_URL}/users/${id}`);
     if (!res.ok) return null;
     return await res.json();
 }
 
 async function fetchComments(greenpointId) {
-    const res = await fetch(`${API_BASE}/greenpoints/${greenpointId}/comments`);
+    const res = await fetch(`${API_URL}/greenpoints/${greenpointId}/comments`);
     if (!res.ok) return [];
     const data = await res.json();
     return Array.isArray(data?.comments) ? data.comments : [];
@@ -344,7 +354,7 @@ async function fetchComments(greenpointId) {
 
 async function postComment(greenpointId, content) {
     if (!token) return null;
-    const res = await fetch(`${API_BASE}/greenpoints/${greenpointId}/comments`, {
+    const res = await fetch(`${API_URL}/greenpoints/${greenpointId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ content })
@@ -358,7 +368,7 @@ async function createReservation(greenpointId) {
     const headers = getAuthHeaders();
     console.log(headers);
     if (!token) return false;
-    const res = await fetch(`${API_BASE}/api/greenpoints/${greenpointId}/reservations`, {
+    const res = await fetch(`${API_URL}/api/greenpoints/${greenpointId}/reservations`, {
         method: 'POST',
         headers: headers,
         body: JSON.stringify({ message: 'Solicitud de reserva' })
@@ -375,7 +385,7 @@ function openCarousel(photos, startIndex = 0) {
 
     const img = document.createElement('img');
     img.className = 'carousel-img';
-    img.src = photos[currentIndex].url.startsWith('http') ? photos[currentIndex].url : `${API_BASE}/greenpoint_photo/${photos[currentIndex].url}`;
+    img.src = photos[currentIndex].url.startsWith('http') ? photos[currentIndex].url : `${API_URL}/greenpoint_photo/${photos[currentIndex].url}`;
 
     const closeBtn = document.createElement('div');
     closeBtn.className = 'carousel-close';
@@ -388,7 +398,7 @@ function openCarousel(photos, startIndex = 0) {
     prevBtn.onclick = (e) => {
         e.stopPropagation();
         currentIndex = (currentIndex - 1 + photos.length) % photos.length;
-        img.src = photos[currentIndex].url.startsWith('http') ? photos[currentIndex].url : `${API_BASE}/greenpoint_photo/${photos[currentIndex].url}`;
+        img.src = photos[currentIndex].url.startsWith('http') ? photos[currentIndex].url : `${API_URL}/greenpoint_photo/${photos[currentIndex].url}`;
     };
 
     const nextBtn = document.createElement('div');
@@ -397,7 +407,7 @@ function openCarousel(photos, startIndex = 0) {
     nextBtn.onclick = (e) => {
         e.stopPropagation();
         currentIndex = (currentIndex + 1) % photos.length;
-        img.src = photos[currentIndex].url.startsWith('http') ? photos[currentIndex].url : `${API_BASE}/greenpoint_photo/${photos[currentIndex].url}`;
+        img.src = photos[currentIndex].url.startsWith('http') ? photos[currentIndex].url : `${API_URL}/greenpoint_photo/${photos[currentIndex].url}`;
     };
 
     modal.appendChild(closeBtn);
@@ -412,10 +422,14 @@ function openCarousel(photos, startIndex = 0) {
 }
 
 async function renderMyPosts(page = 1) {
-    feedContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Cargando mis publicaciones...</div>';
+    feedContainer.innerHTML = `
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 50px;">
+        <img src="/assets/gif/wired-lineal-1683-recycling-hover-cycle-2.webp" alt="Loading..." style="width:100px; height:100px; mix-blend-mode: multiply;">
+        <div style="margin-top:10px; color:#555;">Cargando mis publicaciones...</div>
+    </div>`;
 
     try {
-        const res = await fetch(`${API_BASE}/greenpoints/users/${currentUserId}?page=${page}&limit=${myLimit}`, {
+        const res = await fetch(`${API_URL}/greenpoints/users/${currentUserId}?page=${page}&limit=${myLimit}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -443,7 +457,7 @@ async function renderMyPosts(page = 1) {
 
             const avatar = document.createElement('img');
             avatar.className = 'avatar';
-            avatar.src = currentUser?.avatar_url ? `${API_BASE}/profile_photo/${currentUser.avatar_url}` : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (currentUser?.username || 'user');
+            avatar.src = currentUser?.avatar_url ? `${API_URL}/profile_photo/${currentUser.avatar_url}` : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (currentUser?.username || 'user');
 
             const hinfo = document.createElement('div');
             const uname = document.createElement('div');
@@ -513,7 +527,11 @@ async function renderMyPosts(page = 1) {
                     // Restore chat UI if hidden
                     restoreChatUI();
                     const restoredChat = document.getElementById('chatContainer');
-                    if (restoredChat) restoredChat.style.display = '';
+                    if (restoredChat) {
+                        restoredChat.style.display = 'flex';
+                        restoredChat.style.flexDirection = 'column';
+                        restoredChat.style.flex = '1';
+                    }
 
                     // Start chat with this greenpoint
                     // We need to pass a user object, but for 'my posts', the other user is the collector.
@@ -556,7 +574,7 @@ async function renderMyPosts(page = 1) {
                     wrapper.className = 'photo-wrapper';
                     const img = document.createElement('img');
                     img.className = 'photo-item';
-                    img.src = photos[i].url.startsWith('http') ? photos[i].url : `${API_BASE}/greenpoint_photo/${photos[i].url}`;
+                    img.src = photos[i].url.startsWith('http') ? photos[i].url : `${API_URL}/greenpoint_photo/${photos[i].url}`;
 
                     wrapper.appendChild(img);
 
@@ -759,7 +777,7 @@ async function renderMyPosts(page = 1) {
 async function getGreenPointData(id) {
     try {
         const headers = getAuthHeaders();
-        const response = await fetch(`${API_BASE}/greenpoints/fulldata/${id}`, {
+        const response = await fetch(`${API_URL}/greenpoints/fulldata/${id}`, {
             method: 'GET',
             headers: headers
         });
@@ -777,11 +795,130 @@ let allPage = 1;
 const allLimit = 5;
 let allTotalPages = 1;
 
-async function renderFeed(page = 1) {
-    feedContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Cargando publicaciones...</div>';
+
+// Helper for sending direct message
+async function sendDirectMessage(chatId, content) {
+    try {
+        const res = await fetch(`${API_URL}/api/direct-chats/${chatId}/messages`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ content })
+        });
+        if (!res.ok) throw new Error('Failed to send direct message');
+        const data = await res.json();
+
+        // Append message to UI locally immediately
+        // appendMessage({
+        //     sender_id: currentUserId,
+        //     content: content,
+        //     created_at: new Date().toISOString()
+        // });
+
+        // Clear input (already cleared in event listener, but ensuring logic)
+        const chatMessageInput = document.getElementById('chatMessageInput');
+        if (chatMessageInput) chatMessageInput.value = '';
+    } catch (err) {
+        console.error(err);
+        alert('Error sending message');
+    }
+}
+
+async function startDirectChat(targetUser) {
+    if (!targetUser || !targetUser.id_user) {
+        console.error("Invalid target user for direct chat");
+        return;
+    }
+
+    // UI Setup
+    const chatContainer = document.getElementById('chatContainer');
+    if (chatContainer) {
+        chatContainer.style.display = 'flex';
+        chatContainer.style.flexDirection = 'column';
+        chatContainer.style.flex = '1';
+    }
+    if (mainContainer) mainContainer.style.gridTemplateColumns = '250px 3fr 2fr';
+
+    const chatAvatar = document.getElementById('chatAvatar');
+    const chatUsername = document.getElementById('chatUsername');
+    const chatSubtitle = document.getElementById('chatSubtitle');
+    const chatMessages = document.getElementById('chatMessages');
+
+    // Optimistic UI update
+    if (chatAvatar) {
+        chatAvatar.src = targetUser.avatar_url
+            ? `${API_URL}/profile_photo/${targetUser.avatar_url}`
+            : `https://api.dicebear.com/7.x/initials/svg?seed=${targetUser.username}`;
+        chatAvatar.style.display = 'block';
+    }
+    if (chatUsername) chatUsername.textContent = `${targetUser.name || ''} ${targetUser.lastname || ''}`.trim() || targetUser.username;
+    if (chatSubtitle) chatSubtitle.textContent = 'Chat Directo';
+
+    if (chatMessages) {
+        chatMessages.innerHTML = '<div style="text-align:center; padding:20px;">Cargando chat...</div>';
+    }
 
     try {
-        const res = await fetch(`${API_BASE}/greenpoints/posts?page=${page}&limit=${allLimit}`, {
+        const res = await fetch(`${API_URL}/api/direct-chats/user/${targetUser.id_user}`, {
+            headers: getAuthHeaders()
+        });
+
+        if (!res.ok) throw new Error('Error starting direct chat');
+
+        const data = await res.json();
+        const chat = data.chat;
+        const messages = data.messages || [];
+
+        // Set Active Chat Context
+        activeChat = {
+            id: targetUser.id_user,
+            username: targetUser.username,
+            isDirect: true,
+            chatId: chat.id_chat
+        };
+
+        // Join Socket Room
+        if (socket && socket.connected) {
+            socket.emit('join_direct_chat', { chatId: chat.id_chat });
+
+            // Remove previous listeners to avoid duplicates
+            socket.off('new_direct_message');
+            socket.on('new_direct_message', (msg) => {
+                if (activeChat && activeChat.isDirect && activeChat.chatId === msg.id_chat) {
+                    appendMessage(msg);
+                }
+            });
+        }
+
+        // Render Messages
+        if (chatMessages) {
+            chatMessages.innerHTML = '';
+            if (messages.length === 0) {
+                chatMessages.innerHTML = '<div style="text-align:center; color:#888;">Inicio del chat con ' + (targetUser.username || 'usuario') + '</div>';
+            } else {
+                messages.forEach(msg => appendMessage(msg));
+            }
+        }
+
+    } catch (err) {
+        console.error(err);
+        if (chatMessages) {
+            chatMessages.innerHTML = '<div style="text-align:center; color:red;">Error al cargar chat.</div>';
+        }
+    }
+}
+
+async function renderFeed(page = 1) {
+    // Show chat skeleton initially if chat container exists
+    restoreChatUI();
+
+    feedContainer.innerHTML = `
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 50px;">
+        <img src="/assets/gif/wired-lineal-1683-recycling-hover-cycle-2.webp" alt="Loading..." style="width:100px; height:100px; mix-blend-mode: multiply;">
+        <div style="margin-top:10px; color:#555;">Cargando publicaciones...</div>
+    </div>`;
+
+    try {
+        const res = await fetch(`${API_URL}/greenpoints/posts?page=${page}&limit=${allLimit}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) throw new Error('Error al cargar publicaciones');
@@ -833,7 +970,7 @@ async function renderFeed(page = 1) {
 
             const avatar = document.createElement('img');
             avatar.className = 'avatar';
-            avatar.src = user?.avatar_url ? `${API_BASE}/profile_photo/${user.avatar_url}` : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (user?.username || 'user');
+            avatar.src = user?.avatar_url ? `${API_URL}/profile_photo/${user.avatar_url}` : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (user?.username || 'user');
 
             const hinfo = document.createElement('div');
             const uname = document.createElement('div');
@@ -882,7 +1019,7 @@ async function renderFeed(page = 1) {
                     wrapper.className = 'photo-wrapper';
                     const img = document.createElement('img');
                     img.className = 'photo-item';
-                    img.src = photos[i].url.startsWith('http') ? photos[i].url : `${API_BASE}/greenpoint_photo/${photos[i].url}`;
+                    img.src = photos[i].url.startsWith('http') ? photos[i].url : `${API_URL}/greenpoint_photo/${photos[i].url}`;
 
                     wrapper.appendChild(img);
 
@@ -1008,15 +1145,18 @@ async function renderFeed(page = 1) {
                 });
             }
 
+
+
             const chatBtn = document.createElement('button');
             chatBtn.className = 'chat-btn';
             chatBtn.textContent = 'Chat';
             chatBtn.addEventListener('click', () => {
                 // Ensure UI is restored if missing
                 restoreChatUI();
+                //document.getElementById('chatSection').innerHTML = ''
 
-                // Start chat with the owner of the greenpoint
-                startChat(user, gp.id_greenpoint);
+                // Start chat with the owner of the greenpoint (Direct Chat)
+                startDirectChat(user);
             });
 
             // Toggle Comments Button
@@ -1142,20 +1282,21 @@ async function renderFeed(page = 1) {
     }
 }
 
-chatSendBtn.addEventListener('click', () => {
+async function handleSendMessage() {
+    const chatMessageInput = document.getElementById('chatMessageInput');
+    if (!chatMessageInput) return;
+
     const text = chatMessageInput.value.trim();
     if (!text || !activeChat) return;
-
-    // Determine GreenPoint ID: 
-    // If we are in 'My Posts' mode (owner chatting with collector), activeChat.greenpointId is set.
-    // If we are in 'Feed' mode (collector chatting with owner), activeChat might be the owner user object, 
-    // but we need the greenpoint ID. 
-    // In 'startChat' (feed mode), we should probably attach the GP ID to activeChat as well.
-    // Let's assume activeChat has greenpointId property now.
 
     const gpId = activeChat.greenpointId;
 
     if (!gpId) {
+        // Check if it's a direct chat
+        if (activeChat.isDirect) {
+            await sendDirectMessage(activeChat.chatId, text);
+            return;
+        }
         console.error('No GreenPoint ID found for chat');
         return;
     }
@@ -1168,11 +1309,11 @@ chatSendBtn.addEventListener('click', () => {
         });
     }
 
-    // Optimistic UI update (optional, as socket will echo back)
-    // But let's wait for echo to avoid duplicates if we don't handle IDs
-    // For now, clear input
     chatMessageInput.value = '';
-});
+}
+
+// Global listener removal: The previous chatSendBtn listener was here. 
+// It is now attached dynamically in restoreChatUI and other chat setup functions.
 
 filterButtons.forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -1183,6 +1324,8 @@ filterButtons.forEach(btn => {
         const editContainer = document.getElementById('editContainer');
         if (editContainer) editContainer.remove();
 
+        const chatContainer = document.getElementById('chatContainer');
+
         if (btn.dataset.filter === 'mine') {
             if (chatContainer) chatContainer.style.display = 'none';
             if (mainContainer) mainContainer.style.gridTemplateColumns = ' 250px 3fr 2fr'
@@ -1192,7 +1335,7 @@ filterButtons.forEach(btn => {
             const restoredChat = document.getElementById('chatContainer');
             if (restoredChat) restoredChat.style.display = '';
 
-            if (mainContainer) mainContainer.style.gridTemplateColumns = ' 250px 1fr 350px'
+            if (mainContainer) mainContainer.style.gridTemplateColumns = ' 250px 1fr 450px'
             renderFeed(1);
         }
     });
@@ -1203,7 +1346,7 @@ filterButtons.forEach(btn => {
 const createEditForm = () =>
     `
     <div class="filters-section">
-        <h2>Registrar Nuevo GreenPoint</h2>
+        <h2>Editar GreenPoint</h2>
         <p>Selecciona la ubicación en el mapa y completa los datos.</p>
         <form id="editGreenpointForm" class="add-form">
         <!-- Basic Info -->
@@ -1248,7 +1391,17 @@ const createEditForm = () =>
         <!-- Images -->
         <div class="form-group">
             <label>Imágenes</label>
-            <input type="file" id="gpImages" multiple accept="image/*">
+            <div class="image-upload-container">
+                <label for="gpImages" class="drop-area">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                        <path fill="currentColor"
+                            d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5c0-2.64-2.05-4.78-4.65-4.96M14 13v4h-4v-4H7l5-5l5 5z" />
+                    </svg>
+                    <span>Subir Imágenes</span>
+                    <input type="file" id="gpImages" multiple accept="image/*" hidden>
+                </label>
+                <div id="editImagePreviewContainer" class="image-preview-container"></div>
+            </div>
         </div>
 
         <div class="form-map__button">
@@ -1272,6 +1425,7 @@ function renderEditForm(gp) {
     if (mainContainer) mainContainer.style.gridTemplateColumns = '250px 3fr 2fr';
 
     // Hide chat container
+    const chatContainer = document.getElementById('chatContainer');
     if (chatContainer) chatContainer.style.display = 'none';
 
     // Remove existing edit container
@@ -1286,6 +1440,8 @@ function renderEditForm(gp) {
         chatSection.innerHTML = '';
         chatSection.insertAdjacentHTML('beforeend', createEditForm(gp));
     }
+
+    setupEditGreenpointForm(gp);
 
 
     const materialModal = document.getElementById('materialModal');
@@ -1411,13 +1567,108 @@ function fillForm(greenpoint) {
 
 
 
-const editForm = document.getElementById('editGreenpointForm');
-if (editForm) {
-    // Remove existing listeners to avoid duplicates if renderEditForm is called multiple times
-    const newEditForm = editForm.cloneNode(true);
-    editForm.parentNode.replaceChild(newEditForm, editForm);
+function setupEditGreenpointForm(gp) {
+    const editForm = document.getElementById('editGreenpointForm');
+    const imagesInput = document.getElementById('gpImages');
+    const previewContainer = document.getElementById('editImagePreviewContainer');
 
-    newEditForm.addEventListener('submit', async (e) => {
+    if (!editForm || !imagesInput || !previewContainer) return;
+
+    // State for new images
+    let newSelectedImages = [];
+
+    // Helper to render all images (existing + new)
+    const renderPreviews = () => {
+        previewContainer.innerHTML = '';
+
+        // 1. Existing Photos
+        if (gp.photos && gp.photos.length > 0) {
+            gp.photos.forEach(photo => {
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'position:relative; display:inline-block;';
+
+                const img = document.createElement('img');
+                img.src = photo.url.startsWith('http') ? photo.url : `${API_URL}/greenpoint_photo/${photo.url}`;
+                img.className = 'preview-img';
+
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = '&times;';
+                removeBtn.title = 'Eliminar (Inmediato)';
+                removeBtn.type = 'button';
+                removeBtn.style.cssText = 'position:absolute; top:-5px; right:-5px; background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-size:14px; line-height:1;';
+
+                removeBtn.onclick = async () => {
+                    if (confirm('¿Eliminar esta imagen permanentemente?')) {
+                        try {
+                            const headers = getAuthHeaders();
+                            const res = await fetch(`${API_URL}/greenpoints/${gp.id_greenpoint}/photos/${photo.id}`, {
+                                method: 'DELETE',
+                                headers
+                            });
+                            if (!res.ok) throw new Error('Error al eliminar imagen');
+
+                            // Remove from local array and re-render
+                            gp.photos = gp.photos.filter(p => p.id_greenpoint_image !== photo.id_greenpoint_image);
+                            renderPreviews();
+                            alert('Imagen eliminada');
+                        } catch (err) {
+                            console.error(err);
+                            alert('No se pudo eliminar la imagen');
+                        }
+                    }
+                };
+
+                wrapper.appendChild(img);
+                wrapper.appendChild(removeBtn);
+                previewContainer.appendChild(wrapper);
+            });
+        }
+
+        // 2. New Photos
+        newSelectedImages.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'position:relative; display:inline-block;';
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'preview-img';
+
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = '&times;';
+                removeBtn.type = 'button';
+                removeBtn.style.cssText = 'position:absolute; top:-5px; right:-5px; background:gray; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center;';
+
+                removeBtn.onclick = () => {
+                    newSelectedImages.splice(index, 1);
+                    renderPreviews();
+                };
+
+                wrapper.appendChild(img);
+                wrapper.appendChild(removeBtn);
+                previewContainer.appendChild(wrapper);
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    // Initial render
+    renderPreviews();
+
+    // Handle File Selection
+    imagesInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            if (file.type.startsWith('image/')) {
+                newSelectedImages.push(file);
+            }
+        });
+        renderPreviews();
+        imagesInput.value = ''; // Reset
+    });
+
+    editForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const userStr = localStorage.getItem('user');
@@ -1449,14 +1700,14 @@ if (editForm) {
 
         const [lat, lng] = coordsStr.split(',').map(s => parseFloat(s.trim()));
 
-        const submitBtn = newEditForm.querySelector('.submit-btn');
+        const submitBtn = editForm.querySelector('.submit-btn');
         submitBtn.disabled = true;
         submitBtn.textContent = 'Actualizando...';
 
         try {
             const headers = getAuthHeaders();
             const gpId = gp.id_greenpoint;
-
+            console.log(gpId);
             // 1. Update Basic Info
             const updatePayload = {
                 description,
@@ -1467,7 +1718,7 @@ if (editForm) {
                 // status: 'created' // Optional: reset status if needed
             };
 
-            const res = await fetch(`${API_BASE}/greenpoints/${gpId}`, {
+            const res = await fetch(`${API_URL}/greenpoints/${gpId}`, {
                 method: 'PATCH',
                 headers,
                 body: JSON.stringify(updatePayload)
@@ -1476,25 +1727,18 @@ if (editForm) {
             if (!res.ok) throw new Error('Error al actualizar información básica');
 
             // 2. Update Categories
-            await fetch(`${API_BASE}/greenpoints/${gpId}/categories`, {
+            await fetch(`${API_URL}/greenpoints/${gpId}/categories`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({ categoryIds: selectedCategories })
             });
 
-            // 3. Add NEW Materials (Filter out existing ones to avoid duplicates if logic allows, 
-            // but here we only have the list 'materials'. 
-            // Ideally we should distinguish between new and existing. 
-            // For now, we'll assume 'materials' array contains what the user wants.
-            // However, the backend 'createManyMaterial' inserts. 
-            // We need to filter those that don't have an ID or handle this better.
-            // As a simplification matching 'insert' form: we only add *newly added* materials from the session.
-            // But 'materials' array currently holds ALL materials (loaded from DB + new).
-            // We need to identify which are new.
-            const newMaterials = materials.filter(m => !m.id_greenpoint_material);
+            // 3. Add NEW Materials
+            // We verify which are new by filtering those without ID
+            const newMaterials = materials.filter(m => !m.id);
 
             if (newMaterials.length > 0) {
-                await fetch(`${API_BASE}/greenpoints/${gpId}/materials`, {
+                await fetch(`${API_URL}/greenpoints/${gpId}/materials`, {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({ materials: newMaterials })
@@ -1502,13 +1746,13 @@ if (editForm) {
             }
 
             // 4. Upload NEW Images
-            if (imagesInput.files.length > 0) {
+            if (newSelectedImages.length > 0) {
                 submitBtn.textContent = 'Subiendo imágenes...';
-                for (const file of imagesInput.files) {
+                for (const file of newSelectedImages) {
                     const formData = new FormData();
                     formData.append('photo', file);
 
-                    await fetch(`${API_BASE}/greenpoints/${gpId}/photos`, {
+                    await fetch(`${API_URL}/greenpoints/${gpId}/photos`, {
                         method: 'POST',
                         headers: {
                             'Authorization': headers['Authorization']
@@ -1520,9 +1764,9 @@ if (editForm) {
 
             alert('¡GreenPoint actualizado exitosamente!');
 
-            // Refresh feed or UI
-            // renderFeed(); // If available
-            window.location.reload(); // Simple refresh to show changes
+            // Update local data if needed or refresh
+            if (typeof renderFeed === 'function') renderFeed();
+            if (typeof renderMyPosts === 'function') renderMyPosts();
 
         } catch (error) {
             console.error('Error al actualizar:', error);
@@ -1533,6 +1777,8 @@ if (editForm) {
         }
     });
 }
+
+
 
 
 // Map Modal Logic
@@ -1611,7 +1857,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function acceptReservation(reservationId) {
     try {
         const headers = getAuthHeaders();
-        const res = await fetch(`${API_BASE}/api/reservations/${reservationId}/accept`, {
+        const res = await fetch(`${API_URL}/api/reservations/${reservationId}/accept`, {
             method: 'PATCH',
             headers: headers
         });
@@ -1631,7 +1877,7 @@ async function renderReservationsList(greenpointId) {
 
     try {
         const headers = getAuthHeaders();
-        const res = await fetch(`${API_BASE}/api/greenpoints/${greenpointId}/reservations?status=pending`, {
+        const res = await fetch(`${API_URL}/api/greenpoints/${greenpointId}/reservations?status=pending`, {
             headers: headers
         });
 
@@ -1667,7 +1913,7 @@ async function renderReservationsList(greenpointId) {
 
                 const avatar = document.createElement('img');
                 avatar.className = 'avatar sm';
-                avatar.src = r.collector_avatar ? `${API_BASE}/profile_photo/${r.collector_avatar}` : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (r.collector_username || 'user');
+                avatar.src = r.collector_avatar ? `${API_URL}/profile_photo/${r.collector_avatar}` : 'https://api.dicebear.com/7.x/initials/svg?seed=' + (r.collector_username || 'user');
 
                 const info = document.createElement('div');
                 const name = document.createElement('div');
@@ -1730,7 +1976,7 @@ async function renderReservationsList(greenpointId) {
 async function deleteGreenPoint(id) {
     try {
         const headers = getAuthHeaders();
-        const res = await fetch(`${API_BASE}/greenpoints/${id}`, {
+        const res = await fetch(`${API_URL}/greenpoints/${id}`, {
             method: 'PATCH',
             headers: headers,
             body: JSON.stringify({
@@ -1750,7 +1996,7 @@ async function deleteGreenPoint(id) {
 async function fetchReservationAndStartChat(greenpointId) {
     try {
         const headers = getAuthHeaders();
-        const res = await fetch(`${API_BASE}/api/greenpoints/${greenpointId}/reservations?status=accepted`, {
+        const res = await fetch(`${API_URL}/api/greenpoints/${greenpointId}/reservations?status=accepted`, {
             headers
         });
 
@@ -1773,10 +2019,11 @@ async function fetchReservationAndStartChat(greenpointId) {
             const chatAvatar = document.getElementById('chatAvatar');
             const chatUsername = document.getElementById('chatUsername');
             const chatSubtitle = document.getElementById('chatSubtitle');
+            const chatContainer = document.getElementById('chatContainer');
 
             if (chatAvatar) {
                 chatAvatar.src = collector.avatar_url
-                    ? `${API_BASE}/profile_photo/${collector.avatar_url}`
+                    ? `${API_URL}/profile_photo/${collector.avatar_url}`
                     : `https://api.dicebear.com/7.x/initials/svg?seed=${collector.username}`;
                 chatAvatar.style.display = 'block';
             }
@@ -1806,6 +2053,7 @@ async function fetchReservationAndStartChat(greenpointId) {
     initSocket();
     await fetchMyReservations();
     renderFeed(1);
+    restoreChatUI();
 })();
 
 
@@ -1846,7 +2094,7 @@ if (reportForm) {
         const message = document.getElementById('reportMessage').value;
 
         try {
-            const res = await fetch(`${API_BASE}/reports`, {
+            const res = await fetch(`${API_URL}/reports`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify({ id_greenpoint, type, message })

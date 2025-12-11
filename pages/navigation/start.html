@@ -94,12 +94,14 @@
                     <form id="addGreenpointForm" class="add-form">
                         <!-- Basic Info -->
                         <div class="form-group">
-                            <label>Descripción</label>
-                            <input type="text" id="gpDescription" placeholder="Ej: Contenedor en la plaza" required>
+                            <label>Descripción <span class="required">*</span></label>
+                            <input type="text" id="gpDescription" placeholder="Ej: Contenedor en la plaza" required
+                                minlength="10">
                         </div>
                         <div class="form-group">
-                            <label>Dirección</label>
-                            <input type="text" id="gpDirection" placeholder="Ej: Av. Bolognesi 123" required>
+                            <label>Dirección <span class="required">*</span></label>
+                            <input type="text" id="gpDirection" placeholder="Ej: Av. Bolognesi 123" required
+                                minlength="5">
                         </div>
                         <div class="form-group">
                             <label>Horario de Atención</label>
@@ -112,7 +114,7 @@
 
                         <!-- Categories -->
                         <div class="form-group">
-                            <label>Categorías</label>
+                            <label>Categorías <span class="required">*</span></label>
                             <div class="checkbox-group" id="gpCategoriesContainer">
                                 <label class="category-checkbox" style="--cat-color: #4CAF50;">
                                     <input type="checkbox" value="1">
@@ -139,7 +141,7 @@
 
                         <!-- Materials -->
                         <div class="form-group">
-                            <label>Materiales</label>
+                            <label>Materiales <span class="required">*</span></label>
                             <ul id="materialsList" class="materials-list">
                                 <!-- Items added via modal will appear here -->
                             </ul>
@@ -148,7 +150,7 @@
 
                         <!-- Images -->
                         <div class="form-group">
-                            <label>Imágenes</label>
+                            <label>Imágenes <span class="required">*</span></label>
                             <div class="image-upload-container">
                                 <label for="gpImages" class="drop-area">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
@@ -163,7 +165,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label>Coordenadas</label>
+                            <label>Coordenadas <span class="required">*</span></label>
                             <input type="text" id="gpCoords" placeholder="Selecciona en el mapa" readonly required>
                         </div>
                         <button type="submit" class="submit-btn">Registrar GreenPoint</button>

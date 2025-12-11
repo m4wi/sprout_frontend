@@ -209,10 +209,10 @@
         </form>
     </div>
 
-    <script>
+    <script type="module">
         // Configuración
-        const API_URL = 'http://57.154.66.87:3000/auth';
-        const LOGIN_ENDPOINT = `${API_URL}/login`;
+        import { API_URL } from '/config.js';
+        const LOGIN_ENDPOINT = `${API_URL}/auth/login`;
 
         // Obtener elementos del DOM
         const form = document.getElementById('loginForm');

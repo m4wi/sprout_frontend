@@ -193,6 +193,53 @@ const updateUserData = async (userId, formData) => {
 };
 
 /**
+ * Valida los datos del formulario
+ */
+const validateForm = (formData) => {
+    const name = formData.get('name');
+    const lastname = formData.get('lastname');
+    const username = formData.get('username');
+    const email = formData.get('email');
+    const phone = formData.get('phone');
+    const password = formData.get('password');
+
+    // Nombres y Apellidos: Solo letras y espacios
+    const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    if (!name || !nameRegex.test(name)) {
+        throw new Error('El nombre solo puede contener letras y espacios.');
+    }
+    if (!lastname || !nameRegex.test(lastname)) {
+        throw new Error('El apellido solo puede contener letras y espacios.');
+    }
+
+    // Usuario: Al menos 3 caracteres
+    if (!username || username.length < 3) {
+        throw new Error('El nombre de usuario debe tener al menos 3 caracteres.');
+    }
+
+    // Email: Formato válido
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email && !emailRegex.test(email)) {
+        throw new Error('El correo electrónico no es válido.');
+    }
+
+    // Teléfono: Opcional, solo números y +, 6-15 dígitos
+    if (phone) {
+        const phoneRegex = /^\+?[0-9]{6,15}$/;
+        if (!phoneRegex.test(phone)) {
+            throw new Error('El teléfono debe tener entre 6 y 15 dígitos (puede incluir +).');
+        }
+    }
+
+    // Contraseña: Opcional, pero si se pone, min 6 chars
+    if (password && password.length > 0 && password.length < 6) {
+        throw new Error('La contraseña debe tener al menos 6 caracteres.');
+    }
+
+    return true;
+};
+
+/**
  * Maneja el envío del formulario
  */
 const handleFormSubmit = async (event) => {
@@ -207,11 +254,13 @@ const handleFormSubmit = async (event) => {
     const formData = new FormData(form);
     const submitButton = document.getElementById('sendFormButton');
 
-    // Deshabilitar el botón mientras se procesa
     submitButton.disabled = true;
     submitButton.textContent = 'Guardando...';
 
     try {
+        // Validar antes de enviar
+        validateForm(formData);
+
         const updatedUser = await updateUserData(currentUserId, formData);
 
         // Actualizar la visualización del perfil

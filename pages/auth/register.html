@@ -286,9 +286,9 @@
         </form>
     </div>
 
-    <script>
+    <script type="module">
         // Configuración
-        const API_URL = 'http://57.154.66.87:3000';
+        import { API_URL, STATIC_PHOTO_API_URL } from '/config.js';
         const REGISTER_ENDPOINT = `${API_URL}/users/create`;
 
         // Elementos del DOM
