@@ -58,7 +58,10 @@ header {
     justify-content: space-between;
     align-items: center;
     padding: 0 2rem;
-    background-color: var(--dark-green);
+    background-color: rgba(34, 59, 14, 0.959);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     position: relative;
     z-index: 100;
@@ -154,7 +157,10 @@ footer {
     align-items: center;
     gap: 1rem;
     text-align: center;
-    background-color: var(--dark-green);
+    background-color: rgba(34, 59, 14, 0.966);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     height: 2rem;
     color: var(--foreground-button);
 }

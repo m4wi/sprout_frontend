@@ -24,6 +24,33 @@ function renderSkeletonList(container, count = 3) {
     }
 }
 
+function renderDetailsSkeleton() {
+    const container = document.getElementById('greenpoint-details');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="skeleton-block" style="height:32px; width:60%; background:#e0e0e0; border-radius:4px; margin-bottom:16px;"></div>
+        <div class="skeleton-block" style="height:20px; width:40%; background:#e0e0e0; border-radius:4px; margin-bottom:24px;"></div>
+        
+        <div class="photo-grid three" style="pointer-events:none;">
+            <div style="background:#e0e0e0; width:100%; height:100%;"></div>
+            <div style="background:#e0e0e0; width:100%; height:100%;"></div>
+            <div style="background:#e0e0e0; width:100%; height:100%;"></div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-bottom:24px;">
+            <div style="height:24px; width:80px; background:#e0e0e0; border-radius:16px;"></div>
+            <div style="height:24px; width:80px; background:#e0e0e0; border-radius:16px;"></div>
+        </div>
+
+        <div style="height:16px; width:100%; background:#e0e0e0; border-radius:4px; margin-bottom:8px;"></div>
+        <div style="height:16px; width:90%; background:#e0e0e0; border-radius:4px; margin-bottom:8px;"></div>
+        <div style="height:16px; width:95%; background:#e0e0e0; border-radius:4px; margin-bottom:24px;"></div>
+
+        <div style="height:100px; width:100%; background:#e0e0e0; border-radius:8px;"></div>
+    `;
+}
+
 function renderList(container, items, isActive) {
     container.innerHTML = '';
     if (items.length === 0) {
@@ -276,23 +303,15 @@ async function loadDetails(basicItem) {
         btnProfile.style.pointerEvents = 'none';
     }
 
-    // Set Loader 2
+    // Set Loader 2 (Full Panel)
     const detailsContainer = document.getElementById('greenpoint-details');
     if (detailsContainer) {
-        // Find existing structure to preserve or overwrite?
-        // We want to update content, but while loading, maybe show overlay or clear critical fields?
-        // Let's use an overlay or replace key areas.
-        // For simplicity, we can show loader in the main text area or image area.
-        // Or overlay the whole right panel? The request says "add loader 2 al momento de cargar info".
-        // Let's put it in the photo grid container or description temporarily.
-        const photoGrid = detailsContainer.querySelector('.photo-grid');
-        if (photoGrid) {
-            photoGrid.innerHTML = `
-                <div style="display:flex; justify-content:center; align-items:center; width:100%; height:200px; mix-blend-mode:multiply;">
-                    <img src="/assets/gif/wired-lineal-1683-recycling-hover-cycle-2.webp" width="80" height="80">
-                </div>
-            `;
-        }
+        detailsContainer.innerHTML = `
+            <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; width:100%; height:100%; min-height:300px;">
+                 <img src="/assets/gif/loader2.gif" style="width:200px; height:200px; mix-blend-mode:multiply; opacity:0.8;">
+                 <p style="color:#6b7280; font-size:0.9rem; margin-top:10px;">Cargando detalles...</p>
+            </div>
+        `;
     }
 
     // Join Socket Room
@@ -350,50 +369,62 @@ async function loadDetails(basicItem) {
         // Update Details
         if (!detailsContainer) return;
 
-        detailsContainer.querySelector('.details-title').textContent = item.description || basicItem.description;
-        detailsContainer.querySelector('.details-meta').textContent = `Publicado el ${new Date(item.created_at).toLocaleDateString()}`;
-        detailsContainer.querySelector('.details-desc').textContent = item.description || '';
+        // Reconstruct Content
+        if (!detailsContainer) return;
 
-        // Update Categories
-        const catContainer = detailsContainer.querySelector('.category-tags');
-        if (catContainer) {
-            const cats = item.categories || [];
-            catContainer.innerHTML = cats.map(c => `<span class="category-tag" style="background-color:${c.color || '#22c55e'}">${c.name}</span>`).join('');
-        }
+        const photos = item.photos || [];
+        const photoGridClass = `photo-grid ${photos.length === 1 ? 'one' : photos.length === 2 ? 'two' : 'three'}`;
 
-        // Update Materials
-        const tbody = detailsContainer.querySelector('tbody');
-        if (tbody) {
-            const mats = item.materials || [];
-            tbody.innerHTML = mats.map(m => `<tr><td>${m.name || m.description}</td><td>${m.quantity} ${m.unit}</td><td>${m.description || '-'}</td></tr>`).join('');
-        }
-
-        // Photos
-        const photoGrid = detailsContainer.querySelector('.photo-grid');
-        if (photoGrid) {
-            const photos = item.photos || [];
-            photoGrid.className = `photo-grid ${photos.length === 1 ? 'one' : photos.length === 2 ? 'two' : 'three'}`;
-            photoGrid.innerHTML = '';
-
-            const displayCount = Math.min(photos.length, 3);
-            for (let i = 0; i < displayCount; i++) {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'photo-wrapper';
-                const img = document.createElement('img');
-                img.className = 'photo-item';
-                img.src = photos[i].url.startsWith('http') ? photos[i].url : `${API_URL}/greenpoint_photo/${photos[i].url}`;
-                wrapper.appendChild(img);
-
-                if (i === 2 && photos.length > 3) {
-                    const overlay = document.createElement('div');
-                    overlay.className = 'more-overlay';
-                    overlay.textContent = `+${photos.length - 3}`;
-                    wrapper.appendChild(overlay);
-                }
-                photoGrid.appendChild(wrapper);
+        let photoHTML = '';
+        const displayCount = Math.min(photos.length, 3);
+        for (let i = 0; i < displayCount; i++) {
+            const url = photos[i].url.startsWith('http') ? photos[i].url : `${API_URL}/greenpoint_photo/${photos[i].url}`;
+            let overlay = '';
+            if (i === 2 && photos.length > 3) {
+                overlay = `<div class="more-overlay">+${photos.length - 3}</div>`;
             }
+            photoHTML += `<div class="photo-wrapper"><img class="photo-item" src="${url}">${overlay}</div>`;
         }
 
+        const cats = item.categories || [];
+        const catsHTML = cats.map(c => `<span class="category-tag" style="background-color:${c.color || '#22c55e'}">${c.name}</span>`).join('');
+
+        const mats = item.materials || [];
+        const matsHTML = mats.map(m => `<tr><td>${m.name || m.description}</td><td>${m.quantity} ${m.unit}</td><td>${m.description || '-'}</td></tr>`).join('');
+
+        detailsContainer.innerHTML = `
+            <h3 class="details-title">${item.description || basicItem.description}</h3>
+            <p class="details-meta">Publicado el ${new Date(item.created_at).toLocaleDateString()}</p>
+
+            <div class="${photoGridClass}">
+                ${photoHTML}
+            </div>
+
+            <div class="category-tags">
+                ${catsHTML}
+            </div>
+
+            <p class="details-desc">${item.description || ''}</p>
+
+            <table class="material-table">
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th>Cantidad</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${matsHTML}
+                </tbody>
+            </table>
+
+            <div class="details-meta">
+                <p><strong>Ubicación:</strong> ${item.direction || 'No especificada'}</p>
+                <p><strong>Horario:</strong> ${item.schedule_days || 'Lunes a Viernes de'} ${item.hour || '9-5'}</p>
+            </div>
+        `;
+        console.log(item);
     } catch (err) {
         console.error('Error fetching full details:', err);
     }
@@ -422,6 +453,7 @@ async function getMyBookings() {
     // Render Skeletons initially
     if (listActive) renderSkeletonList(listActive, 3);
     if (listFinished) renderSkeletonList(listFinished, 3);
+    renderDetailsSkeleton();
 
     const books = await getMyBookings();
     console.log('Bookings:', books);
@@ -446,5 +478,7 @@ async function getMyBookings() {
             const first = listFinished.querySelector('.list-item');
             if (first) first.classList.add('active-item');
         }, 0);
+    } else {
+        renderDetailsSkeleton();
     }
 })();

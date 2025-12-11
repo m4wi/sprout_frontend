@@ -212,9 +212,13 @@ const validateForm = (formData) => {
         throw new Error('El apellido solo puede contener letras y espacios.');
     }
 
-    // Usuario: Al menos 3 caracteres
+    // Usuario: Alfanumérico (Letras y números), min 3 caracteres
+    const usernameRegex = /^[a-zA-Z0-9]+$/;
     if (!username || username.length < 3) {
         throw new Error('El nombre de usuario debe tener al menos 3 caracteres.');
+    }
+    if (!usernameRegex.test(username)) {
+        throw new Error('El nombre de usuario solo puede contener letras y números.');
     }
 
     // Email: Formato válido

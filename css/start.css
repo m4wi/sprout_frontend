@@ -912,7 +912,7 @@ main>section:first-child::-webkit-scrollbar-thumb:hover {
     overflow-y: auto;
     z-index: 100;
     display: none;
-    border: 1px solid rgba(0,0,0,0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .search-result-item {
@@ -922,7 +922,7 @@ main>section:first-child::-webkit-scrollbar-thumb:hover {
     padding: 0.75rem 1rem;
     cursor: pointer;
     transition: background 0.2s;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .search-result-item:last-child {
@@ -951,4 +951,108 @@ main>section:first-child::-webkit-scrollbar-thumb:hover {
     margin: 0;
     font-size: 0.8rem;
     color: #6b7280;
+}
+
+/* Load More Button */
+.load-more-btn {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 0.8rem;
+    background: linear-gradient(135deg, var(--unselected-button) 0%, var(--selected-button) 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: 'Motor', sans-serif;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.load-more-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, var(--selected-button) 0%, var(--dark-green) 100%);
+}
+
+/* Modal Styling */
+.modal {
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s;
+}
+
+.modal-content {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    margin: auto;
+    padding: 2rem;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    position: relative;
+    animation: slideUp 0.3s;
+    font-family: 'Poppins', sans-serif;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: var(--dark-green);
+    text-align: center;
+    font-size: 1.5rem;
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-modal:hover,
+.close-modal:focus {
+    color: var(--dark-green);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }

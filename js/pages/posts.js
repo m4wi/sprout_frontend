@@ -339,10 +339,13 @@ async function fetchMyReservations() {
     }
 }
 
+const userCache = new Map();
+
 async function fetchUser(id) {
-    const res = await fetch(`${API_URL}/users/${id}`);
-    if (!res.ok) return null;
-    return await res.json();
+    if (userCache.has(id)) return userCache.get(id);
+    const promise = fetch(`${API_URL}/users/${id}`).then(res => res.ok ? res.json() : null);
+    userCache.set(id, promise);
+    return promise;
 }
 
 async function fetchComments(greenpointId) {
@@ -423,8 +426,8 @@ function openCarousel(photos, startIndex = 0) {
 
 async function renderMyPosts(page = 1) {
     feedContainer.innerHTML = `
-    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 50px;">
-        <img src="/assets/gif/wired-lineal-1683-recycling-hover-cycle-2.webp" alt="Loading..." style="width:100px; height:100px; mix-blend-mode: multiply;">
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height: 60vh; width: 100%;">
+        <img src="/assets/gif/loader2.gif" alt="Loading..." style="width:200px; height:200px; mix-blend-mode: multiply; opacity: 0.8;">
         <div style="margin-top:10px; color:#555;">Cargando mis publicaciones...</div>
     </div>`;
 
@@ -439,6 +442,12 @@ async function renderMyPosts(page = 1) {
         const posts = data.greenpoints || [];
         myTotalPages = data.pagination.totalPages;
         myPage = data.pagination.currentPage;
+
+        // Optimization: Pre-fetch comments
+        const commentPromises = posts.map(gp => fetchComments(gp.id_greenpoint));
+        const allComments = await Promise.all(commentPromises);
+        const commentsMap = {};
+        posts.forEach((gp, i) => { commentsMap[gp.id_greenpoint] = allComments[i]; });
 
         feedContainer.innerHTML = '';
         const list = document.createElement('div');
@@ -669,7 +678,7 @@ async function renderMyPosts(page = 1) {
 
             const commentsList = document.createElement('div');
             commentsList.className = 'comments-list';
-            const comments = await fetchComments(gp.id_greenpoint);
+            const comments = commentsMap[gp.id_greenpoint] || [];
             comments.forEach(cm => {
                 const item = document.createElement('div');
                 item.className = 'comment-item';
@@ -912,8 +921,8 @@ async function renderFeed(page = 1) {
     restoreChatUI();
 
     feedContainer.innerHTML = `
-    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 50px;">
-        <img src="/assets/gif/wired-lineal-1683-recycling-hover-cycle-2.webp" alt="Loading..." style="width:100px; height:100px; mix-blend-mode: multiply;">
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height: 60vh; width: 100%;">
+        <img src="/assets/gif/loader2.gif" alt="Loading..." style="width:200px; height:200px; mix-blend-mode: multiply; opacity: 0.8;">
         <div style="margin-top:10px; color:#555;">Cargando publicaciones...</div>
     </div>`;
 
@@ -927,6 +936,16 @@ async function renderFeed(page = 1) {
         const posts = data.greenpoints || [];
         allTotalPages = data.pagination.totalPages;
         allPage = data.pagination.currentPage;
+
+        // Optimization: Pre-fetch users and comments
+        const userPromises = posts.map(gp => fetchUser(gp.id_citizen));
+        const commentPromises = posts.map(gp => fetchComments(gp.id_greenpoint));
+        const [_, allComments] = await Promise.all([
+            Promise.all(userPromises),
+            Promise.all(commentPromises)
+        ]);
+        const commentsMap = {};
+        posts.forEach((gp, i) => { commentsMap[gp.id_greenpoint] = allComments[i]; });
 
         feedContainer.innerHTML = '';
         const list = document.createElement('div');
@@ -1179,7 +1198,7 @@ async function renderFeed(page = 1) {
             commentsWrap.style.display = 'none'; // Hidden by default
             const commentsList = document.createElement('div');
             commentsList.className = 'comments-list';
-            const comments = await fetchComments(gp.id_greenpoint);
+            const comments = commentsMap[gp.id_greenpoint] || [];
             comments.forEach(cm => {
                 const item = document.createElement('div');
                 item.className = 'comment-item';

@@ -218,7 +218,7 @@ async function cargarGreenPoints(map, page = 1) {
         if (pagination && pagination.currentPage < pagination.totalPages) {
             loadMoreBtn = document.createElement('button');
             loadMoreBtn.id = 'btnLoadMoreAll';
-            loadMoreBtn.className = 'btn-primary';
+            loadMoreBtn.className = 'load-more-btn';
             loadMoreBtn.innerText = 'Cargar más';
             loadMoreBtn.style.marginTop = '1rem';
             loadMoreBtn.style.width = '100%';
@@ -844,6 +844,13 @@ const init = () => {
                 return;
             }
             const user = JSON.parse(userStr);
+
+            // Verificar si el usuario está activo (no baneado)
+            if (user.active === false) {
+                alert('Tu cuenta ha sido bloqueada. No tienes permiso para registrar nuevos GreenPoints.');
+                return;
+            }
+
             const id_citizen = user.id_user || user.id;
 
             // Función de validación interna
@@ -904,6 +911,7 @@ const init = () => {
             const hour = document.getElementById('gpHour').value;
             const date_collect = document.getElementById('gpDateCollect').value;
 
+            const coordsStr = document.getElementById('gpCoords').value;
             const [lat, lng] = coordsStr.split(',').map(s => parseFloat(s.trim()));
 
             const submitBtn = addForm.querySelector('.submit-btn');
